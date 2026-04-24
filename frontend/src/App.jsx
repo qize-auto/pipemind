@@ -25,11 +25,12 @@ const nodeTypes = {
 };
 
 const NEXT_TYPES = {
-  search: ['llm', 'review', 'kb', 'mindmap', 'output'],
-  llm: ['review', 'mindmap', 'output'],
-  review: ['mindmap', 'output'],
-  kb: ['llm', 'review', 'mindmap', 'output'],
+  search: ['llm', 'review', 'kb', 'memory', 'mindmap', 'output'],
+  llm: ['review', 'memory', 'mindmap', 'output'],
+  review: ['memory', 'mindmap', 'output'],
+  kb: ['llm', 'review', 'memory', 'mindmap', 'output'],
   mindmap: [],
+  memory: ['llm', 'review', 'output', 'mindmap'],
 };
 
 let nodeId = 0;

@@ -25,6 +25,8 @@ const zh = {
   'palette.kb.desc': 'IMA 知识库检索',
   'palette.mindmap': '思维导图',
   'palette.mindmap.desc': '以思维导图可视化内容',
+  'palette.memory': '记忆宫殿',
+  'palette.memory.desc': '搜索/保存到 MemPalace 记忆',
   'palette.hint1': '拖拽节点到画布',
   'palette.hint2': '连接线串联工作流',
 
@@ -62,6 +64,14 @@ const zh = {
   'node.mindmap': '思维导图',
   'node.mindmap.placeholder': '等待上游内容...',
 
+  'node.memory': '记忆宫殿',
+  'node.memory.search': '搜索',
+  'node.memory.save': '保存',
+  'node.memory.wing': '项目/人',
+  'node.memory.room': '主题',
+  'node.memory.query': '搜索词',
+  'node.memory.results': '结果数',
+
   'node.add': '追加节点',
   'node.add.search': '搜索',
   'node.add.llm': 'LLM',
@@ -69,6 +79,7 @@ const zh = {
   'node.add.review': '审查',
   'node.add.kb': '知识库',
   'node.add.mindmap': '导图',
+  'node.add.memory': '记忆',
   'node.duration': 'ms',
   'node.done': '✅ ',
 
@@ -124,6 +135,8 @@ const en = {
   'palette.kb.desc': 'IMA KB search',
   'palette.mindmap': 'Mind Map',
   'palette.mindmap.desc': 'Visualize as mind map',
+  'palette.memory': 'Memory',
+  'palette.memory.desc': 'Search/save MemPalace memory',
   'palette.hint1': 'Drag nodes to canvas',
   'palette.hint2': 'Connect to build pipeline',
 
@@ -161,6 +174,14 @@ const en = {
   'node.mindmap': 'Mind Map',
   'node.mindmap.placeholder': 'Waiting for upstream...',
 
+  'node.memory': 'Memory Palace',
+  'node.memory.search': 'Search',
+  'node.memory.save': 'Save',
+  'node.memory.wing': 'Wing',
+  'node.memory.room': 'Room',
+  'node.memory.query': 'Query',
+  'node.memory.results': 'Results',
+
   'node.add': 'Add node',
   'node.add.search': 'Search',
   'node.add.llm': 'LLM',
@@ -168,6 +189,7 @@ const en = {
   'node.add.review': 'Review',
   'node.add.kb': 'KB',
   'node.add.mindmap': 'Mind',
+  'node.add.memory': 'Memory',
   'node.duration': 'ms',
   'node.done': '✅ ',
 

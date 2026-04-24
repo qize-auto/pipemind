@@ -1,0 +1,36 @@
+{
+  "name": "记忆搜索→思维导图",
+  "nodes": [
+    {
+      "id": "mem1",
+      "type": "memory",
+      "position": { "x": 0, "y": 100 },
+      "data": {
+        "mode": "search",
+        "wing": "pipemind",
+        "room": "backend",
+        "query": "engine node type",
+        "n_results": 5
+      }
+    },
+    {
+      "id": "llm1",
+      "type": "llm",
+      "position": { "x": 350, "y": 100 },
+      "data": {
+        "prompt": "将以下记忆搜索结果整理为思维导图格式，用 Markdown 标题和列表展示层级关系。以 # 项目 开头。只输出 Markdown。",
+        "model": "deepseek-chat"
+      }
+    },
+    {
+      "id": "mm1",
+      "type": "mindmap",
+      "position": { "x": 700, "y": 100 },
+      "data": {}
+    }
+  ],
+  "edges": [
+    { "source": "mem1", "target": "llm1" },
+    { "source": "llm1", "target": "mm1" }
+  ]
+}

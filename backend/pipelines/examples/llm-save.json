@@ -1,0 +1,27 @@
+{
+  "name": "LLM输出→记忆存档",
+  "nodes": [
+    {
+      "id": "llm1",
+      "type": "llm",
+      "position": { "x": 0, "y": 100 },
+      "data": {
+        "prompt": "总结 PipeMind 架构：节点类型（search/llm/review/kb/mindmap/memory）、连接方式（DAG）、运行引擎（拓扑排序）。用中文 100 字以内。",
+        "model": "deepseek-chat"
+      }
+    },
+    {
+      "id": "mem1",
+      "type": "memory",
+      "position": { "x": 350, "y": 100 },
+      "data": {
+        "mode": "save",
+        "wing": "pipemind",
+        "room": "architecture"
+      }
+    }
+  ],
+  "edges": [
+    { "source": "llm1", "target": "mem1" }
+  ]
+}

@@ -24,3 +24,7 @@ test_prosearch.mjs
 _search_params.json
 *.ps1
 _temp/
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

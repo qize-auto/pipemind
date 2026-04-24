@@ -4,3 +4,4 @@ export { output } from './output.js';
 export { review } from './review.js';
 export { kb } from './kb.js';
 export { mindmap } from './mindmap.js';
+export { memory } from './memory.js';

@@ -4,9 +4,10 @@ import { useI18n } from '../i18n';
 
 // ── Quick-add helper ──
 const NEXT_TYPES = {
-  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
+  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'kb', icon: '📚' }, { type: 'output', icon: '📤' }],
   llm: [{ type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
   review: [{ type: 'output', icon: '📤' }],
+  kb: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
   output: [],
 };
 
@@ -233,6 +234,53 @@ export function OutputNode({ data, selected, id }) {
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Knowledge Base Node ──
+export function KBNode({ data, selected, id }) {
+  const { t } = useI18n();
+  const [query, setQuery] = useState(data.query || '');
+  const [kbId, setKbId] = useState(data.knowledge_base_id || '');
+  data.query = query;
+  data.knowledge_base_id = kbId;
+
+  return (
+    <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
+      selected ? 'border-blue-400 ring-2 ring-blue-400/20' : 'border-blue-500/30'
+    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      <Handle type="target" position={Position.Left} className="!bg-blue-400 !w-3 !h-3 !border-2 !border-gray-900" />
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-blue-500/10 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <span>📚</span>
+          <span className="text-sm font-medium text-blue-300">{t('node.kb')}</span>
+        </div>
+        {data.onAddNode && <AddButton nodeType="kb" nodeId={id} onAddNode={data.onAddNode} />}
+      </div>
+      <div className="p-3 space-y-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('node.kb.placeholder')}
+          className="w-full px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+        />
+        <div className="flex gap-2 text-xs text-gray-500">
+          <span>{t('node.kb.kbId')}:</span>
+          <input
+            value={kbId}
+            onChange={(e) => setKbId(e.target.value)}
+            placeholder="kb_xxx"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-gray-300 focus:outline-none"
+          />
+        </div>
+      </div>
+      {data.executed && data.result && (
+        <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
+          {t('node.done')}{data.result.duration}{t('node.duration')}
+        </div>
+      )}
+      <Handle type="source" position={Position.Right} className="!bg-blue-400 !w-3 !h-3 !border-2 !border-gray-900" />
     </div>
   );
 }

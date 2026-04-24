@@ -11,7 +11,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import NodePalette from './NodePalette.jsx';
-import { SearchNode, LLMNode, OutputNode, ReviewNode } from './nodes/SearchNode.jsx';
+import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/SearchNode.jsx';
 import { I18nProvider, useI18n } from './i18n.js';
 
 const nodeTypes = {
@@ -19,12 +19,14 @@ const nodeTypes = {
   llm: LLMNode,
   output: OutputNode,
   review: ReviewNode,
+  kb: KBNode,
 };
 
 const NEXT_TYPES = {
-  search: ['llm', 'review', 'output'],
+  search: ['llm', 'review', 'kb', 'output'],
   llm: ['review', 'output'],
   review: ['output'],
+  kb: ['llm', 'review', 'output'],
   output: [],
 };
 
@@ -51,7 +53,7 @@ function AppInner() {
   const lastPlacedRef = useRef(null);
 
   const getDefaultLabel = useCallback((type) => {
-    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review') };
+    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb') };
     return labels[type] || type;
   }, [t]);
 

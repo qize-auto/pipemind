@@ -21,6 +21,8 @@ const zh = {
   'palette.output.desc': '格式化展示结果',
   'palette.review': '审查',
   'palette.review.desc': '自检幻觉与质量问题',
+  'palette.kb': '知识库',
+  'palette.kb.desc': 'IMA 知识库检索',
   'palette.hint1': '拖拽节点到画布',
   'palette.hint2': '连接线串联工作流',
 
@@ -50,11 +52,17 @@ const zh = {
   'node.review.critical': '尖锐',
   'node.review.desc': '审查上游内容质量与准确性',
 
+  'node.kb': '知识库',
+  'node.kb.placeholder': '搜索关键词...',
+  'node.kb.kbId': '知识库 ID',
+  'node.kb.limit': '结果数',
+
   'node.add': '追加节点',
   'node.add.search': '搜索',
   'node.add.llm': 'LLM',
   'node.add.output': '输出',
   'node.add.review': '审查',
+  'node.add.kb': '知识库',
   'node.duration': 'ms',
   'node.done': '✅ ',
 
@@ -106,6 +114,8 @@ const en = {
   'palette.output.desc': 'Format results',
   'palette.review': 'Review',
   'palette.review.desc': 'Quality check',
+  'palette.kb': 'Knowledge Base',
+  'palette.kb.desc': 'IMA KB search',
   'palette.hint1': 'Drag nodes to canvas',
   'palette.hint2': 'Connect to build pipeline',
 
@@ -135,11 +145,17 @@ const en = {
   'node.review.critical': 'Critical',
   'node.review.desc': 'Quality check upstream content',
 
+  'node.kb': 'Knowledge Base',
+  'node.kb.placeholder': 'Search query...',
+  'node.kb.kbId': 'KB ID',
+  'node.kb.limit': 'Max results',
+
   'node.add': 'Add node',
   'node.add.search': 'Search',
   'node.add.llm': 'LLM',
   'node.add.output': 'Output',
   'node.add.review': 'Review',
+  'node.add.kb': 'KB',
   'node.duration': 'ms',
   'node.done': '✅ ',
 

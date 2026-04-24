@@ -1169,6 +1169,7 @@ function ResultCard({ id, result, t, expanded }) {
           {String(result.output || '').slice(0, 200)}
         </pre>
       )}
+        <LogPanel visible={showLog} onClose={() => setShowLog(false)} />
     </div>
   );
 }

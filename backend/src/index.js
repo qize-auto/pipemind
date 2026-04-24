@@ -3,7 +3,8 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { runWorkflow, getExecutionPlan, runSingleNode } from './engine.js';
+import { runWorkflow, getExecutionPlan, runSingleNode, pipelineEvents } from './engine.js';
+import { getRun, getNodeExecutions, createRun, completeRun } from './db.js';
 import * as mcpManager from './mcp-manager.js';
 import { getDb } from './db.js';
 
@@ -14,6 +15,9 @@ const EXAMPLES_DIR = path.join(PIPELINES_DIR, 'examples');
 // Ensure pipeline storage dirs
 if (!fs.existsSync(PIPELINES_DIR)) fs.mkdirSync(PIPELINES_DIR, { recursive: true });
 if (!fs.existsSync(EXAMPLES_DIR)) fs.mkdirSync(EXAMPLES_DIR, { recursive: true });
+
+// SSE client set
+const sseClients = new Set();
 
 const app = express();
 app.use(cors());
@@ -52,12 +56,43 @@ app.post('/api/run', async (req, res) => {
   }
 
   try {
+    // Create run record
+    const runId = createRun(pipelineName || 'unnamed', nodes, edges);
+
+    // Run with observability wrappers
+    const origOnNodeStart = pipelineEvents.listeners('node:start');
+    const origOnNodeError = pipelineEvents.listeners('node:error');
+
+    // Set up run-scoped broadcast
+    const broadcast = (eventType) => (data) => {
+      const evt = { type: eventType, runId, ...data };
+      const msg = 'data: ' + JSON.stringify(evt) + String.fromCharCode(0x0a, 0x0a);
+      for (const client of sseClients) {
+        client.write(msg);
+      }
+    };
+    const onStart = broadcast('node:start');
+    const onComplete = broadcast('node:complete');
+    const onError = broadcast('node:error');
+    const onPipelineComplete = broadcast('pipeline:complete');
+
+    pipelineEvents.on('node:start', onStart);
+    pipelineEvents.on('node:complete', onComplete);
+    pipelineEvents.on('node:error', onError);
+    pipelineEvents.on('pipeline:complete', onPipelineComplete);
+
     const results = await runWorkflow(nodes, edges);
-    saveRunToDb(pipelineName, nodes, edges, 'success', results);
-    res.json({ success: true, results });
+    completeRun(runId, results);
+
+    pipelineEvents.off('node:start', onStart);
+    pipelineEvents.off('node:complete', onComplete);
+    pipelineEvents.off('node:error', onError);
+    pipelineEvents.off('pipeline:complete', onPipelineComplete);
+
+    res.json({ success: true, results, runId });
   } catch (err) {
     console.error('[PipeMind] Workflow error:', err.message);
-    saveRunToDb(pipelineName, nodes, edges, 'failed', {});
+    // We can't easily get runId here if createRun failed
     res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join('\n') });
   }
 });
@@ -198,6 +233,37 @@ app.post('/api/runs', (req, res) => {
 });
 
 // List recent runs
+// SSE event stream (real-time pipeline execution events)
+app.get('/api/stream/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write('data: {}' + String.fromCharCode(0x0a, 0x0a));
+
+  sseClients.add(res);
+  const keepAlive = setInterval(() => res.write(':keepalive\n\n'), 15000);
+
+  req.on('close', () => {
+    sseClients.delete(res);
+    clearInterval(keepAlive);
+  });
+});
+
+// Run detail (with node executions)
+app.get('/api/runs/:id', (req, res) => {
+  try {
+    const run = getRun(req.params.id);
+    if (!run) return res.status(404).json({ error: 'Run not found' });
+    const nodes = getNodeExecutions(req.params.id);
+    res.json({ success: true, run, nodes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/runs', (_req, res) => {
   try {
     const db = getDb();

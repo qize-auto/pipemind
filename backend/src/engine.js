@@ -1,4 +1,8 @@
 import * as nodeHandlers from './nodes/index.js';
+import { EventEmitter } from 'events';
+
+/** Pipeline execution events */
+export const pipelineEvents = new EventEmitter();
 
 /**
  * Build adjacency list + in-degree map from edges
@@ -104,6 +108,7 @@ export async function runSingleNode(nodeId, nodes, edges, results) {
  * Execute workflow as a DAG: find source nodes => run => propagate
  */
 export async function runWorkflow(nodes, edges) {
+  pipelineEvents.emit('pipeline:start', { nodeCount: nodes.length, ts: Date.now() });
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
   const { adj, inDeg } = buildGraph(edges);
   const results = {};
@@ -135,9 +140,19 @@ export async function runWorkflow(nodes, edges) {
       const inputs = upstreamIds.map(id => results[id]?.output || '');
 
       // Execute
+      pipelineEvents.emit('node:exec', { nodeId: node.id, type: node.type, label: node.data?.label || node.type, ts: Date.now() });
       const start = Date.now();
-      const output = await handler(node.data || {}, inputs, results);
+      let output;
+      try {
+        output = await handler(node.data || {}, inputs, results);
+      } catch (e) {
+        pipelineEvents.emit('node:error', { nodeId: node.id, type: node.type, label: node.data?.label || node.type, error: e.message, ts: Date.now() });
+        throw e;
+      }
       const duration = Date.now() - start;
+
+      // Emit node start event
+      pipelineEvents.emit('node:start', { nodeId: node.id, type: node.type, label: node.data?.label || node.type, ts: Date.now() });
 
       // For condition nodes, store verdict in results
       const nodeResult = { output, duration, type: node.type, label: node.data?.label || node.type };
@@ -145,6 +160,9 @@ export async function runWorkflow(nodes, edges) {
         nodeResult.verdict = output?.verdict;
       }
       results[node.id] = nodeResult;
+
+      // Emit node complete event
+      pipelineEvents.emit('node:complete', { nodeId: node.id, type: node.type, label: node.data?.label || node.type, duration, ts: Date.now(), output });
 
       // Enqueue downstream nodes (with condition branching)
       if (adj[node.id]) {
@@ -172,5 +190,6 @@ export async function runWorkflow(nodes, edges) {
     queue = nextQueue;
   }
 
+  pipelineEvents.emit('pipeline:complete', { ts: Date.now(), duration: Date.now() - (results[Object.keys(results)[0]]?.ts || Date.now()) });
   return results;
 }

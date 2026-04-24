@@ -322,13 +322,14 @@ function AppInner() {
         const res = await fetch('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nodes, edges }),
+          body: JSON.stringify({ nodes, edges, pipelineName: pipelineName || 'unnamed' }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
           throw new Error(data.error || `HTTP ${res.status}`);
         }
         setResults(data.results);
+        setShowHistory(false);
         setNodes((nds) =>
           nds.map((n) => {
             const result = data.results[n.id];
@@ -489,6 +490,7 @@ function AppInner() {
       if (data.success && data.pipeline) {
         setNodes(data.pipeline.nodes || []);
         setEdges(data.pipeline.edges || []);
+        setShowHistory(false);
         setResults(null);
         setError(null);
         setStepMode(false);
@@ -815,7 +817,19 @@ function AppInner() {
         </div>
 
         {/* Right: Config Sidebar or Results Panel or Tips */}
-        {selectedNode ? (
+        {/* Floating history tab */}
+        <button
+          onClick={() => setShowHistory(s => !s)}
+          className={`absolute right-4 top-20 z-40 px-3 py-2 text-sm rounded-lg shadow-lg transition-colors ${
+            showHistory ? 'bg-indigo-600 text-white border border-indigo-500' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 border border-gray-700'
+          }`}
+          style={{ position: 'fixed', right: showHistory ? '436px' : '16px' }}
+        >
+          {t('app.history')}
+        </button>
+        {showHistory ? (
+          <HistoryPanel t={t} />
+        ) : selectedNode ? (
           <ConfigSidebar selectedNode={selectedNode} updateNodeData={updateNodeData} t={t} />
         ) : results ? (
           <aside className="w-80 border-l border-gray-800 bg-gray-900/50 flex flex-col">

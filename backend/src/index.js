@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runWorkflow, getExecutionPlan, runSingleNode } from './engine.js';
+import { getDb } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PIPELINES_DIR = path.join(__dirname, '..', 'pipelines');
@@ -22,9 +23,28 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '0.1.0' });
 });
 
+function saveRunToDb(pipelineName, nodes, edges, status, results) {
+  try {
+    const db = getDb();
+    const id = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const startedAt = new Date().toISOString();
+    const completedAt = status !== 'running' ? new Date().toISOString() : null;
+    const nodeCount = nodes.length;
+    const stmt = db.prepare(`
+      INSERT INTO pipeline_runs (id, pipeline_name, nodes_json, edges_json, status, started_at, completed_at, results_json, node_count)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, pipelineName || 'unnamed', JSON.stringify(nodes), JSON.stringify(edges), status, startedAt, completedAt, JSON.stringify(results || {}), nodeCount);
+    return id;
+  } catch (err) {
+    console.error('[PipeMind] Failed to save run:', err.message);
+    return null;
+  }
+}
+
 // -- Execute workflow --
 app.post('/api/run', async (req, res) => {
-  const { nodes = [], edges = [] } = req.body;
+  const { nodes = [], edges = [], pipelineName } = req.body;
 
   if (!nodes.length) {
     return res.status(400).json({ error: 'No nodes in workflow' });
@@ -32,9 +52,11 @@ app.post('/api/run', async (req, res) => {
 
   try {
     const results = await runWorkflow(nodes, edges);
+    saveRunToDb(pipelineName, nodes, edges, 'success', results);
     res.json({ success: true, results });
   } catch (err) {
     console.error('[PipeMind] Workflow error:', err.message);
+    saveRunToDb(pipelineName, nodes, edges, 'failed', {});
     res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join('\n') });
   }
 });
@@ -155,6 +177,75 @@ app.delete('/api/pipelines/:id', (req, res) => {
     const filePath = path.join(PIPELINES_DIR, `${req.params.id}.json`);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Pipeline not found' });
     fs.unlinkSync(filePath);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -- Run History CRUD --
+
+// Save a run record
+app.post('/api/runs', (req, res) => {
+  try {
+    const { pipelineName, nodes, edges, status, results } = req.body;
+    const runId = saveRunToDb(pipelineName, nodes, edges, status || 'unknown', results || {});
+    res.json({ success: true, runId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List recent runs
+app.get('/api/runs', (_req, res) => {
+  try {
+    const db = getDb();
+    const rows = db.prepare('SELECT id, pipeline_name, status, started_at, completed_at, node_count FROM pipeline_runs ORDER BY started_at DESC LIMIT 20').all();
+    const runs = rows.map(r => ({
+      id: r.id,
+      pipelineName: r.pipeline_name,
+      status: r.status,
+      startedAt: r.started_at,
+      completedAt: r.completed_at,
+      nodeCount: r.node_count,
+    }));
+    res.json({ success: true, runs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get single run details
+app.get('/api/runs/:id', (req, res) => {
+  try {
+    const db = getDb();
+    const row = db.prepare('SELECT * FROM pipeline_runs WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Run not found' });
+    res.json({
+      success: true,
+      run: {
+        id: row.id,
+        pipelineName: row.pipeline_name,
+        nodes: JSON.parse(row.nodes_json || '[]'),
+        edges: JSON.parse(row.edges_json || '[]'),
+        status: row.status,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        results: JSON.parse(row.results_json || '{}'),
+        nodeCount: row.node_count,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a run
+app.delete('/api/runs/:id', (req, res) => {
+  try {
+    const db = getDb();
+    const result = db.prepare('DELETE FROM pipeline_runs WHERE id = ?').run(req.params.id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Run not found' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

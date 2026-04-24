@@ -13,7 +13,8 @@ import 'reactflow/dist/style.css';
 import NodePalette from './NodePalette.jsx';
 import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/SearchNode.jsx';
 import { MindMapNode } from './nodes/MindMapNode.jsx';
-import { I18nProvider, useI18n } from './i18n.js';
+import { MemoryNode } from './nodes/MemoryNode.jsx';
+import { I18nProvider, useI18n } from './i18n.jsx';
 
 const nodeTypes = {
   search: SearchNode,
@@ -22,6 +23,7 @@ const nodeTypes = {
   review: ReviewNode,
   kb: KBNode,
   mindmap: MindMapNode,
+  memory: MemoryNode,
 };
 
 const NEXT_TYPES = {
@@ -56,7 +58,7 @@ function AppInner() {
   const lastPlacedRef = useRef(null);
 
   const getDefaultLabel = useCallback((type) => {
-    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap') };
+    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap'), memory: t('node.memory') };
     return labels[type] || type;
   }, [t]);
 
@@ -153,33 +155,58 @@ function AppInner() {
     setRunning(true);
     setResults(null);
     setError(null);
-    try {
-      const res = await fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes, edges }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
-      setResults(data.results);
-      const executedIds = new Set(Object.keys(data.results));
+    // Step 1: Reset all nodes
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: { ...n.data, executing: false, executed: false, error: null, result: null },
+      }))
+    );
+    // Step 2: Brief delay then mark all as executing (visual pulse)
+    setTimeout(async () => {
       setNodes((nds) =>
         nds.map((n) => ({
           ...n,
-          data: {
-            ...n.data,
-            executed: executedIds.has(n.id),
-            result: data.results[n.id],
-          },
+          data: { ...n.data, executing: true },
         }))
       );
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRunning(false);
-    }
+      try {
+        const res = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nodes, edges }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        setResults(data.results);
+        setNodes((nds) =>
+          nds.map((n) => {
+            const result = data.results[n.id];
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                executing: false,
+                executed: true,
+                result: result || null,
+              },
+            };
+          })
+        );
+      } catch (err) {
+        setError(err.message);
+        setNodes((nds) =>
+          nds.map((n) => ({
+            ...n,
+            data: { ...n.data, executing: false, error: err.message },
+          }))
+        );
+      } finally {
+        setRunning(false);
+      }
+    }, 150);
   };
 
   // ── Pipeline Save ──

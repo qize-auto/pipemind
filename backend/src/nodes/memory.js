@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRIDGE = path.resolve(__dirname, '../mempalace_bridge.py');
 const DEFAULT_PALACE = path.resolve(os.homedir(), '.mempalace/palace');
-import os from 'os';
 
 /**
  * Memory node — bridges PipeMind pipelines with MemPalace memory system.

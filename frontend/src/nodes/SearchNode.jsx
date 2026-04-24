@@ -56,8 +56,8 @@ export function SearchNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-cyan-400 ring-2 ring-cyan-400/20' : 'border-cyan-500/30'
-    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      selected ? 'border-cyan-400 ring-2 ring-cyan-400/20' : (data.error ? 'node-error' : 'border-cyan-500/30')
+    } ${data.executing ? 'node-executing' : ''} ${data.executed ? 'ring-2 ring-emerald-400/40' : ''} ${data.error ? 'node-error' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-cyan-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-cyan-500/10 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -91,6 +91,9 @@ export function SearchNode({ data, selected, id }) {
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
+      {data.error && (
+        <div className="node-error-badge">❌ {String(data.error).slice(0, 80)}</div>
+      )}
       <Handle type="source" position={Position.Right} className="!bg-cyan-400 !w-3 !h-3 !border-2 !border-gray-900" />
     </div>
   );
@@ -104,8 +107,8 @@ export function LLMNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-purple-400 ring-2 ring-purple-400/20' : 'border-purple-500/30'
-    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      selected ? 'border-purple-400 ring-2 ring-purple-400/20' : (data.error ? 'node-error' : 'border-purple-500/30')
+    } ${data.executing ? 'node-executing' : ''} ${data.executed ? 'ring-2 ring-emerald-400/40' : ''} ${data.error ? 'node-error' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-purple-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-purple-500/10 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -137,6 +140,9 @@ export function LLMNode({ data, selected, id }) {
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
+      {data.error && (
+        <div className="node-error-badge">❌ {String(data.error).slice(0, 80)}</div>
+      )}
       <Handle type="source" position={Position.Right} className="!bg-purple-400 !w-3 !h-3 !border-2 !border-gray-900" />
     </div>
   );
@@ -152,8 +158,8 @@ export function ReviewNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-amber-500/30'
-    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      selected ? 'border-amber-400 ring-2 ring-amber-400/20' : (data.error ? 'node-error' : 'border-amber-500/30')
+    } ${data.executing ? 'node-executing' : ''} ${data.executed ? 'ring-2 ring-emerald-400/40' : ''} ${data.error ? 'node-error' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-amber-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-amber-500/10 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -194,6 +200,9 @@ export function ReviewNode({ data, selected, id }) {
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
+      {data.error && (
+        <div className="node-error-badge">❌ {String(data.error).slice(0, 80)}</div>
+      )}
       <Handle type="source" position={Position.Right} className="!bg-amber-400 !w-3 !h-3 !border-2 !border-gray-900" />
     </div>
   );
@@ -205,8 +214,8 @@ export function OutputNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-emerald-400 ring-2 ring-emerald-400/20' : 'border-emerald-500/30'
-    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      selected ? 'border-emerald-400 ring-2 ring-emerald-400/20' : (data.error ? 'node-error' : 'border-emerald-500/30')
+    } ${data.executing ? 'node-executing' : ''} ${data.executed ? 'ring-2 ring-emerald-400/40' : ''} ${data.error ? 'node-error' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-emerald-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-emerald-500/10 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -235,6 +244,9 @@ export function OutputNode({ data, selected, id }) {
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
+      {data.error && (
+        <div className="node-error-badge">❌ {String(data.error).slice(0, 80)}</div>
+      )}
     </div>
   );
 }
@@ -249,8 +261,8 @@ export function KBNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-blue-400 ring-2 ring-blue-400/20' : 'border-blue-500/30'
-    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
+      selected ? 'border-blue-400 ring-2 ring-blue-400/20' : (data.error ? 'node-error' : 'border-blue-500/30')
+    } ${data.executing ? 'node-executing' : ''} ${data.executed ? 'ring-2 ring-emerald-400/40' : ''} ${data.error ? 'node-error' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-blue-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-blue-500/10 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -280,6 +292,9 @@ export function KBNode({ data, selected, id }) {
         <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
           {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
+      )}
+      {data.error && (
+        <div className="node-error-badge">❌ {String(data.error).slice(0, 80)}</div>
       )}
       <Handle type="source" position={Position.Right} className="!bg-blue-400 !w-3 !h-3 !border-2 !border-gray-900" />
     </div>

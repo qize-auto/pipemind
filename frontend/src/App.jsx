@@ -15,6 +15,7 @@ import ConfigSidebar from './ConfigSidebar.jsx';
 import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/SearchNode.jsx';
 import { MindMapNode } from './nodes/MindMapNode.jsx';
 import { MemoryNode } from './nodes/MemoryNode.jsx';
+import { ConditionNode } from './nodes/ConditionNode.jsx';
 import { I18nProvider, useI18n } from './i18n.jsx';
 
 const nodeTypes = {
@@ -25,15 +26,17 @@ const nodeTypes = {
   kb: KBNode,
   mindmap: MindMapNode,
   memory: MemoryNode,
+  condition: ConditionNode,
 };
 
 const NEXT_TYPES = {
-  search: ['llm', 'review', 'kb', 'memory', 'mindmap', 'output'],
-  llm: ['review', 'memory', 'mindmap', 'output'],
-  review: ['memory', 'mindmap', 'output'],
-  kb: ['llm', 'review', 'memory', 'mindmap', 'output'],
+  search: ['llm', 'review', 'kb', 'memory', 'mindmap', 'condition', 'output'],
+  llm: ['review', 'memory', 'mindmap', 'condition', 'output'],
+  review: ['memory', 'mindmap', 'condition', 'output'],
+  kb: ['llm', 'review', 'memory', 'mindmap', 'condition', 'output'],
   mindmap: [],
-  memory: ['llm', 'review', 'output', 'mindmap'],
+  memory: ['llm', 'review', 'output', 'mindmap', 'condition'],
+  condition: ['llm', 'review', 'output', 'mindmap', 'memory'],
 };
 
 const AUTOSAVE_KEY = 'pipemind_autosave';
@@ -73,7 +76,7 @@ function AppInner() {
   const autosaveTimerRef = useRef(null);
 
   const getDefaultLabel = useCallback((type) => {
-    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap'), memory: t('node.memory') };
+    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap'), memory: t('node.memory'), condition: t('node.condition') };
     return labels[type] || type;
   }, [t]);
 

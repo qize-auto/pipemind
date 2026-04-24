@@ -39,6 +39,17 @@ const TYPE_CONFIGS = {
     { key: 'room', label: 'room', type: 'text', placeholder: 'general' },
     { key: 'limit', label: 'limit', type: 'number', default: 5 },
   ],
+  condition: [
+    { key: 'condition', label: 'condition', type: 'text', placeholderKey: 'node.condition.placeholder' },
+    { key: 'operator', label: 'operator', type: 'select', default: 'contains', options: [
+      { value: 'contains', labelKey: 'condition.contains' },
+      { value: 'equals', labelKey: 'condition.equals' },
+      { value: 'length_gt', labelKey: 'condition.length_gt' },
+      { value: 'length_lt', labelKey: 'condition.length_lt' },
+      { value: 'regex', labelKey: 'condition.regex' },
+    ]},
+    { key: 'compareValue', label: 'compare', type: 'text', placeholderKey: 'node.condition.compare' },
+  ],
   mindmap: [],  // no config
   output: [
     { key: 'format', label: 'format', type: 'select', options: [
@@ -144,7 +155,7 @@ export default function ConfigSidebar({ selectedNode, updateNodeData, t }) {
 function NodeIcon({ type }) {
   const icons = {
     search: '🔍', llm: '🤖', review: '🔬',
-    kb: '📚', mindmap: '🧠', memory: '🏛️', output: '📤',
+    kb: '📚', mindmap: '🧠', memory: '🏛️', output: '📤', condition: '🔀',
   };
   return <span>{icons[type] || '📦'}</span>;
 }

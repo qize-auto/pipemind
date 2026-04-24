@@ -80,6 +80,18 @@ export async function runSingleNode(nodeId, nodes, edges, results) {
   const output = await handler(node.data || {}, inputs, results);
   const duration = Date.now() - start;
 
+  // For condition nodes, store verdict in results for downstream edge filtering
+  if (node.type === 'condition') {
+    results[node.id] = {
+      output,
+      duration,
+      type: node.type,
+      label: node.data?.label || node.type,
+      verdict: output?.verdict,
+    };
+    return results[node.id];
+  }
+
   return {
     output,
     duration,
@@ -127,14 +139,32 @@ export async function runWorkflow(nodes, edges) {
       const output = await handler(node.data || {}, inputs, results);
       const duration = Date.now() - start;
 
-      results[node.id] = { output, duration, type: node.type, label: node.data?.label || node.type };
+      // For condition nodes, store verdict in results
+      const nodeResult = { output, duration, type: node.type, label: node.data?.label || node.type };
+      if (node.type === 'condition') {
+        nodeResult.verdict = output?.verdict;
+      }
+      results[node.id] = nodeResult;
 
-      // Enqueue downstream nodes
+      // Enqueue downstream nodes (with condition branching)
       if (adj[node.id]) {
         for (const downstreamId of adj[node.id]) {
-          if (!visited.has(downstreamId)) {
-            nextQueue.push(nodeMap[downstreamId]);
+          if (visited.has(downstreamId)) continue;
+
+          // For condition nodes, only enqueue the matching branch
+          if (node.type === 'condition') {
+            const edge = edges.find(e => e.source === node.id && e.target === downstreamId);
+            const sourceHandle = edge?.sourceHandle || 'true';
+            const verdict = output?.verdict;
+
+            // sourceHandle 'true' = right output, 'false' = bottom output
+            if ((verdict === true && sourceHandle !== 'true') ||
+                (verdict === false && sourceHandle !== 'false')) {
+              continue;
+            }
           }
+
+          nextQueue.push(nodeMap[downstreamId]);
         }
       }
     }

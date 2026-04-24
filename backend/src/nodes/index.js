@@ -2,6 +2,7 @@ export { search } from './search.js';
 export { llm } from './llm.js';
 export { output } from './output.js';
 export { review } from './review.js';
+export { condition } from './condition.js';
 export { kb } from './kb.js';
 export { mindmap } from './mindmap.js';
 export { memory } from './memory.js';

@@ -27,6 +27,8 @@ const zh = {
   'palette.mindmap.desc': '以思维导图可视化内容',
   'palette.memory': '记忆宫殿',
   'palette.memory.desc': '搜索/保存到 MemPalace 记忆',
+  'palette.condition': '条件分支',
+  'palette.condition.desc': '条件判断分支',
   'palette.hint1': '拖拽节点到画布',
   'palette.hint2': '连接线串联工作流',
 
@@ -129,6 +131,16 @@ const zh = {
   'app.import.placeholder': '上传 JSON 文件...',
   'app.history': '📋 历史',
 
+  'node.condition': '条件分支',
+  'node.condition.placeholder': '输入检查条件',
+  'node.condition.compare': '对比值',
+  'condition.contains': '包含',
+  'condition.equals': '等于',
+  'condition.length_gt': '长度 >',
+  'condition.length_lt': '长度 <',
+  'condition.regex': '正则',
+  'node.add.condition': '条件',
+
   'history.title': '运行历史',
   'history.empty': '暂无运行记录',
   'history.id': 'ID',
@@ -186,6 +198,9 @@ const en = {
   'palette.mindmap.desc': 'Visualize as mind map',
   'palette.memory': 'Memory',
   'palette.memory.desc': 'Search/save MemPalace memory',
+  'palette.condition': 'Condition',
+  'palette.condition.desc': 'Condition branch',
+
   'palette.hint1': 'Drag nodes to canvas',
   'palette.hint2': 'Connect to build pipeline',
 
@@ -287,6 +302,16 @@ const en = {
   'app.import.error': 'Import failed: invalid format',
   'app.import.placeholder': 'Upload JSON...',
   'app.history': '📋 History',
+
+  'node.condition': 'Condition',
+  'node.condition.placeholder': 'Input condition',
+  'node.condition.compare': 'Compare value',
+  'condition.contains': 'Contains',
+  'condition.equals': 'Equals',
+  'condition.length_gt': 'Length >',
+  'condition.length_lt': 'Length <',
+  'condition.regex': 'Regex',
+  'node.add.condition': 'Cond',
 
   'history.title': 'Run History',
   'history.empty': 'No runs yet',

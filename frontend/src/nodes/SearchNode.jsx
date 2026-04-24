@@ -4,12 +4,13 @@ import { useI18n } from '../i18n';
 
 // ── Quick-add helper ──
 const NEXT_TYPES = {
-  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'kb', icon: '📚' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
-  llm: [{ type: 'review', icon: '🔬' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
-  review: [{ type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
-  kb: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'kb', icon: '📚' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'condition', icon: '🔀' }, { type: 'output', icon: '📤' }],
+  llm: [{ type: 'review', icon: '🔬' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'condition', icon: '🔀' }, { type: 'output', icon: '📤' }],
+  review: [{ type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'condition', icon: '🔀' }, { type: 'output', icon: '📤' }],
+  kb: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'condition', icon: '🔀' }, { type: 'output', icon: '📤' }],
   mindmap: [],
-  memory: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  memory: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'mindmap', icon: '🧠' }, { type: 'condition', icon: '🔀' }, { type: 'output', icon: '📤' }],
+  condition: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'memory', icon: '🏛️' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
 };
 
 function AddButton({ nodeType, nodeId, onAddNode }) {

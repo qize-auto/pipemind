@@ -62,3 +62,43 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Step bar at the bottom of the canvas */
+.step-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(99, 102, 241, 0.3);
+  z-index: 10;
+}
+
+.step-progress {
+  width: 120px;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.step-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #34d399);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Autosave recovery banner */
+.autosave-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(99, 102, 241, 0.15);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+  z-index: 50;
+  font-size: 13px;
+  color: #c7d2fe;
+}

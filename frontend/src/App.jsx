@@ -36,6 +36,8 @@ const NEXT_TYPES = {
   memory: ['llm', 'review', 'output', 'mindmap'],
 };
 
+const AUTOSAVE_KEY = 'pipemind_autosave';
+
 let nodeId = 0;
 
 function AppInner() {
@@ -48,6 +50,15 @@ function AppInner() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [resultTab, setResultTab] = useState('all');
 
+  // Step-by-step execution state
+  const [stepMode, setStepMode] = useState(false);
+  const [executionPlan, setExecutionPlan] = useState([]);
+  const [executionStep, setExecutionStep] = useState(0);
+  const [executingNodeId, setExecutingNodeId] = useState(null);
+
+  // Autosave recovery banner
+  const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+
   // Pipeline save/load state
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
@@ -59,14 +70,27 @@ function AppInner() {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const lastPlacedRef = useRef(null);
+  const autosaveTimerRef = useRef(null);
 
   const getDefaultLabel = useCallback((type) => {
     const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap'), memory: t('node.memory') };
     return labels[type] || type;
   }, [t]);
 
-  // Fetch saved pipelines & examples on mount
+  // -- Check for autosaved pipeline on mount --
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.nodes && data.nodes.length > 0) {
+          setShowRestoreBanner(true);
+        }
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+
     fetch('/api/pipelines').then(r => r.json()).then(d => {
       if (d.success) setSavedPipelines(d.pipelines);
     }).catch(() => {});
@@ -74,6 +98,62 @@ function AppInner() {
       if (d.success) setExamples(d.examples);
     }).catch(() => {});
   }, []);
+
+  // -- Autosave with debounce (2s) --
+  useEffect(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      if (nodes.length > 0) {
+        try {
+          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ nodes, edges }));
+        } catch (e) {
+          // localStorage quota exceeded or unavailable
+        }
+      }
+    }, 2000);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, [nodes, edges]);
+
+  // -- Clear autosave when pipeline is explicitly loaded or canvas cleared --
+  const clearAutosave = useCallback(() => {
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+    } catch (e) {}
+    setShowRestoreBanner(false);
+  }, []);
+
+  const handleRestore = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        setNodes(data.nodes || []);
+        setEdges(data.edges || []);
+        setResults(null);
+        setError(null);
+        let maxId = 0;
+        for (const n of (data.nodes || [])) {
+          const num = parseInt(n.id.replace('node_', ''));
+          if (num > maxId) maxId = num;
+        }
+        nodeId = maxId;
+        lastPlacedRef.current = null;
+      }
+    } catch (e) {}
+    clearAutosave();
+  }, [setNodes, setEdges, clearAutosave]);
+
+  const handleDiscard = useCallback(() => {
+    clearAutosave();
+  }, [clearAutosave]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -85,7 +165,7 @@ function AppInner() {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // ── Drop from palette (with auto-connect) ──
+  // -- Drop from palette (with auto-connect) --
   const onDrop = useCallback((event) => {
     event.preventDefault();
     const type = event.dataTransfer.getData('application/reactflow');
@@ -121,7 +201,7 @@ function AppInner() {
     lastPlacedRef.current = { id: newNodeId, type };
   }, [reactFlowInstance, setNodes, setEdges, getDefaultLabel]);
 
-  // ── Quick-add from node button (auto-connected) ──
+  // -- Quick-add from node button (auto-connected) --
   const handleAddNode = useCallback((parentId, nextType) => {
     if (!reactFlowInstance) return;
     const parent = reactFlowInstance.getNode(parentId);
@@ -153,7 +233,6 @@ function AppInner() {
     [nodes, handleAddNode]
   );
 
-  // ── Run workflow ──
   const onNodeClick = useCallback((event, node) => {
     setSelectedNode(node);
   }, []);
@@ -178,27 +257,67 @@ function AppInner() {
     });
   }, [setNodes]);
 
-  const runWorkflow = async () => {
-    setRunning(true);
-    setResults(null);
-    setError(null);
-    setSelectedNode(null);
-    setResultTab('all');
-    // Step 1: Reset all nodes
+  // -- Node visual helpers --
+  const markNodesExecuting = useCallback((nodeIds) => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          executing: nodeIds.includes(n.id),
+          executed: nodeIds.includes(n.id) ? false : n.data.executed,
+          error: null,
+          result: null,
+        },
+      }))
+    );
+  }, [setNodes]);
+
+  const clearNodeExecutionState = useCallback(() => {
     setNodes((nds) =>
       nds.map((n) => ({
         ...n,
         data: { ...n.data, executing: false, executed: false, error: null, result: null },
       }))
     );
-    // Step 2: Brief delay then mark all as executing (visual pulse)
+  }, [setNodes]);
+
+  const markNodeCompleted = useCallback((nodeId, result) => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? {
+              ...n,
+              data: {
+                ...n.data,
+                executing: false,
+                executed: true,
+                result: result || null,
+              },
+            }
+          : n
+      )
+    );
+  }, [setNodes]);
+
+  // -- Run all (original workflow) --
+  const runAll = useCallback(async () => {
+    // Exit step mode if active
+    setStepMode(false);
+    setExecutionPlan([]);
+    setExecutionStep(0);
+    setExecutingNodeId(null);
+
+    setRunning(true);
+    setResults(null);
+    setError(null);
+    setSelectedNode(null);
+    setResultTab('all');
+
+    clearNodeExecutionState();
+
     setTimeout(async () => {
-      setNodes((nds) =>
-        nds.map((n) => ({
-          ...n,
-          data: { ...n.data, executing: true },
-        }))
-      );
+      markNodesExecuting(nodes.map(n => n.id));
       try {
         const res = await fetch('/api/run', {
           method: 'POST',
@@ -236,9 +355,108 @@ function AppInner() {
         setRunning(false);
       }
     }, 150);
-  };
+  }, [nodes, edges, clearNodeExecutionState, markNodesExecuting, setNodes]);
 
-  // ── Pipeline Save ──
+  // -- Step-by-step execution: init --
+  const runInit = useCallback(async () => {
+    setRunning(true);
+    setResults(null);
+    setError(null);
+    setSelectedNode(null);
+    setResultTab('all');
+
+    clearNodeExecutionState();
+
+    try {
+      const res = await fetch('/api/run-init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodes, edges }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      setExecutionPlan(data.plan);
+      setExecutionStep(0);
+      setStepMode(true);
+      setRunning(false);
+    } catch (err) {
+      setError(err.message);
+      setRunning(false);
+    }
+  }, [nodes, edges, clearNodeExecutionState]);
+
+  // -- Step-by-step execution: next step --
+  const runStep = useCallback(async () => {
+    if (executionStep >= executionPlan.length) return;
+
+    const nodeId = executionPlan[executionStep];
+    setExecutingNodeId(nodeId);
+
+    // Mark current node as executing
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          executing: n.id === nodeId,
+          executed: n.data.executed || false,
+        },
+      }))
+    );
+
+    setRunning(true);
+
+    try {
+      const currentResults = results || {};
+      const res = await fetch('/api/run-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodes, edges, nodeId, resultsSoFar: currentResults }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      setResults(data.results);
+      setExecutionStep(executionStep + 1);
+      setExecutingNodeId(null);
+
+      // Mark node as completed
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  executing: false,
+                  executed: true,
+                  result: data.result || null,
+                },
+              }
+            : n
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+      setExecutingNodeId(null);
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, executing: false, error: err.message } }
+            : n
+        )
+      );
+    } finally {
+      setRunning(false);
+    }
+  }, [executionPlan, executionStep, nodes, edges, results, setNodes]);
+
+  // -- Pipeline Save --
   const savePipeline = async () => {
     const name = pipelineName.trim() || `Pipeline_${new Date().toLocaleDateString()}`;
     try {
@@ -262,7 +480,7 @@ function AppInner() {
     }
   };
 
-  // ── Pipeline Load ──
+  // -- Pipeline Load --
   const loadPipeline = async (id) => {
     setLoadError(null);
     try {
@@ -273,6 +491,11 @@ function AppInner() {
         setEdges(data.pipeline.edges || []);
         setResults(null);
         setError(null);
+        setStepMode(false);
+        setExecutionPlan([]);
+        setExecutionStep(0);
+        setExecutingNodeId(null);
+        clearAutosave();
         let maxId = 0;
         for (const n of (data.pipeline.nodes || [])) {
           const num = parseInt(n.id.replace('node_', ''));
@@ -327,9 +550,16 @@ function AppInner() {
     setEdges([]);
     setResults(null);
     setError(null);
+    setStepMode(false);
+    setExecutionPlan([]);
+    setExecutionStep(0);
+    setExecutingNodeId(null);
+    clearAutosave();
     nodeId = 0;
     lastPlacedRef.current = null;
   };
+
+  const isStepComplete = stepMode && executionStep >= executionPlan.length;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-950 text-gray-100">
@@ -369,8 +599,17 @@ function AppInner() {
           >
             {t('app.clear')}
           </button>
+          {!stepMode && (
+            <button
+              onClick={runInit}
+              disabled={running || nodes.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors"
+            >
+              <span>▶ {t('step.title')}</span>
+            </button>
+          )}
           <button
-            onClick={runWorkflow}
+            onClick={runAll}
             disabled={running || nodes.length === 0}
             className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors"
           >
@@ -379,43 +618,112 @@ function AppInner() {
         </div>
       </header>
 
+      {/* Autosave Recovery Banner */}
+      {showRestoreBanner && (
+        <div className="autosave-banner">
+          <span>{t('autosave.banner')}</span>
+          <div className="flex items-center gap-2">
+            <button onClick={handleRestore} className="px-3 py-1 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-colors">
+              {t('autosave.restore')}
+            </button>
+            <button onClick={handleDiscard} className="px-3 py-1 text-xs font-medium bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors">
+              {t('autosave.discard')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
         <NodePalette />
 
-        <div className="flex-1" ref={reactFlowWrapper}>
-          <ReactFlowProvider>
-            <ReactFlow
-              nodes={nodesWithAdd}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onInit={setReactFlowInstance}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onNodeClick={onNodeClick}
-              onPaneClick={onPaneClick}
-              connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 3 }}
-              connectionLineType="smoothstep"
-              nodeTypes={nodeTypes}
-              fitView
-              deleteKeyCode="Delete"
-              snapToGrid
-              snapGrid={[16, 16]}
-              defaultEdgeOptions={{ animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } }}
-            >
-              <Background color="#1e293b" gap={24} />
-              <Controls position="bottom-right" />
-              <MiniMap
-                nodeStrokeColor="#6366f1"
-                nodeColor="#1e293b"
-                nodeBorderRadius={4}
-                maskColor="rgba(0,0,0,0.6)"
-                style={{ background: '#0f172a' }}
-              />
-            </ReactFlow>
-          </ReactFlowProvider>
+        <div className="flex flex-col flex-1">
+          <div className="flex-1" ref={reactFlowWrapper}>
+            <ReactFlowProvider>
+              <ReactFlow
+                nodes={nodesWithAdd}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
+                connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 3 }}
+                connectionLineType="smoothstep"
+                nodeTypes={nodeTypes}
+                fitView
+                deleteKeyCode="Delete"
+                snapToGrid
+                snapGrid={[16, 16]}
+                defaultEdgeOptions={{ animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } }}
+              >
+                <Background color="#1e293b" gap={24} />
+                <Controls position="bottom-right" />
+                <MiniMap
+                  nodeStrokeColor="#6366f1"
+                  nodeColor="#1e293b"
+                  nodeBorderRadius={4}
+                  maskColor="rgba(0,0,0,0.6)"
+                  style={{ background: '#0f172a' }}
+                />
+              </ReactFlow>
+            </ReactFlowProvider>
+          </div>
+
+          {/* Step Mode Status Bar */}
+          {stepMode && (
+            <div className="step-bar">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-gray-300">
+                  {t('step.label')} {Math.min(executionStep + 1, executionPlan.length)}{t('step.of')}{executionPlan.length}
+                </span>
+                <div className="step-progress">
+                  <div
+                    className="step-progress-fill"
+                    style={{ width: `${(executionStep / executionPlan.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isStepComplete ? (
+                  <>
+                    <span className="text-xs text-emerald-400">{t('step.finish')}</span>
+                    <button
+                      onClick={() => { setStepMode(false); setExecutionPlan([]); setExecutionStep(0); }}
+                      className="px-3 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                    >
+                      {t('dialog.save.cancel')}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={runStep}
+                      disabled={running}
+                      className="flex items-center gap-1 px-3 py-1 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded transition-colors"
+                    >
+                      {running ? t('app.running') : t('step.next')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setStepMode(false);
+                        setExecutionPlan([]);
+                        setExecutionStep(0);
+                        runAll();
+                      }}
+                      disabled={running}
+                      className="px-3 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 disabled:text-gray-600 text-gray-300 rounded transition-colors"
+                    >
+                      {t('step.runAll')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Config Sidebar or Results Panel or Tips */}

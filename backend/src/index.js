@@ -3,7 +3,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { runWorkflow } from './engine.js';
+import { runWorkflow, getExecutionPlan, runSingleNode } from './engine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PIPELINES_DIR = path.join(__dirname, '..', 'pipelines');
@@ -17,12 +17,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// ── Health check ──
+// -- Health check --
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '0.1.0' });
 });
 
-// ── Execute workflow ──
+// -- Execute workflow --
 app.post('/api/run', async (req, res) => {
   const { nodes = [], edges = [] } = req.body;
 
@@ -39,7 +39,42 @@ app.post('/api/run', async (req, res) => {
   }
 });
 
-// ── Pipeline CRUD ──
+// -- Initialize step-by-step execution (return plan, don't execute) --
+app.post('/api/run-init', async (req, res) => {
+  const { nodes = [], edges = [] } = req.body;
+
+  if (!nodes.length) {
+    return res.status(400).json({ error: 'No nodes in workflow' });
+  }
+
+  try {
+    const plan = getExecutionPlan(nodes, edges);
+    res.json({ success: true, plan, nodeCount: plan.length });
+  } catch (err) {
+    console.error('[PipeMind] Init error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -- Execute one step --
+app.post('/api/run-step', async (req, res) => {
+  const { nodes = [], edges = [], nodeId, resultsSoFar = {} } = req.body;
+
+  if (!nodeId) {
+    return res.status(400).json({ error: 'nodeId is required' });
+  }
+
+  try {
+    const result = await runSingleNode(nodeId, nodes, edges, resultsSoFar);
+    const results = { ...resultsSoFar, [nodeId]: result };
+    res.json({ success: true, nodeId, result, results });
+  } catch (err) {
+    console.error('[PipeMind] Step error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -- Pipeline CRUD --
 
 // List saved pipelines
 app.get('/api/pipelines', (_req, res) => {
@@ -126,7 +161,7 @@ app.delete('/api/pipelines/:id', (req, res) => {
   }
 });
 
-// ── Export results ──
+// -- Export results --
 app.post('/api/export', (req, res) => {
   try {
     const { results } = req.body;

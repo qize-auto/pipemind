@@ -1,4 +1,3 @@
-import { execSync } from 'child_process';
 import * as nodeHandlers from './nodes/index.js';
 
 /**
@@ -20,7 +19,77 @@ function buildGraph(edges) {
 }
 
 /**
- * Execute workflow as a DAG: find source nodes → run → propagate
+ * Topological sort: return ordered node ID list
+ */
+export function getExecutionPlan(nodes, edges) {
+  const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const { adj, inDeg } = buildGraph(edges);
+
+  // Sources: nodes with no incoming edges
+  let queue = nodes
+    .filter(n => !inDeg[n.id])
+    .sort((a, b) => a.position.y - b.position.y);
+
+  const plan = [];
+  const visited = new Set();
+  let iteration = 0;
+
+  while (queue.length > 0 && iteration < 100) {
+    iteration++;
+    const nextQueue = [];
+
+    for (const node of queue) {
+      if (visited.has(node.id)) continue;
+      visited.add(node.id);
+      plan.push(node.id);
+
+      if (adj[node.id]) {
+        for (const downstreamId of adj[node.id]) {
+          if (!visited.has(downstreamId)) {
+            nextQueue.push(nodeMap[downstreamId]);
+          }
+        }
+      }
+    }
+
+    queue = nextQueue;
+  }
+
+  return plan;
+}
+
+/**
+ * Execute a single node given upstream results
+ */
+export async function runSingleNode(nodeId, nodes, edges, results) {
+  const node = nodes.find(n => n.id === nodeId);
+  if (!node) throw new Error(`Node not found: ${nodeId}`);
+
+  const handler = nodeHandlers[node.type];
+  if (!handler) throw new Error(`Unknown node type: ${node.type}`);
+
+  // Collect inputs from upstream nodes
+  const upstreamIds = edges
+    .filter(e => e.target === node.id)
+    .map(e => e.source);
+
+  const inputs = upstreamIds.map(id => results[id]?.output || '');
+
+  // Execute
+  const start = Date.now();
+  const output = await handler(node.data || {}, inputs, results);
+  const duration = Date.now() - start;
+
+  return {
+    output,
+    duration,
+    type: node.type,
+    label: node.data?.label || node.type,
+  };
+}
+
+/**
+ * Execute workflow as a DAG: find source nodes => run => propagate
  */
 export async function runWorkflow(nodes, edges) {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));

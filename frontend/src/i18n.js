@@ -1,0 +1,188 @@
+import { createContext, useContext, useState } from 'react';
+
+const I18nContext = createContext();
+
+const zh = {
+  'app.title': 'PipeMind',
+  'app.subtitle': 'v0.1 MVP',
+  'app.load': '📂 加载',
+  'app.save': '💾 保存',
+  'app.clear': '清空',
+  'app.run': '▶ 运行',
+  'app.running': '⏳ 运行中...',
+  'app.lang': 'EN',
+
+  'palette.title': '节点库',
+  'palette.search': '搜索',
+  'palette.search.desc': '联网搜索信息',
+  'palette.llm': 'LLM 处理',
+  'palette.llm.desc': 'AI 分析总结',
+  'palette.output': '输出',
+  'palette.output.desc': '格式化展示结果',
+  'palette.review': '审查',
+  'palette.review.desc': '自检幻觉与质量问题',
+  'palette.hint1': '拖拽节点到画布',
+  'palette.hint2': '连接线串联工作流',
+
+  'node.search': '搜索',
+  'node.search.placeholder': '输入搜索关键词...',
+  'node.search.freshness': '时效',
+  'node.search.day': '24小时',
+  'node.search.week': '一周',
+  'node.search.month': '一月',
+  'node.llm': 'LLM 处理',
+  'node.llm.placeholder': '输入处理指令...',
+  'node.llm.model': '模型',
+  'node.output': '输出',
+  'node.output.format': '格式',
+  'node.output.text': '纯文本',
+  'node.output.markdown': 'Markdown',
+  'node.output.json': 'JSON',
+  'node.output.desc': '接收上游节点结果',
+  'node.review': '审查',
+  'node.review.strictness': '严格度',
+  'node.review.mild': '宽松',
+  'node.review.normal': '适中',
+  'node.review.strict': '严格',
+  'node.review.tone': '语气',
+  'node.review.kind': '友善',
+  'node.review.balanced': '客观',
+  'node.review.critical': '尖锐',
+  'node.review.desc': '审查上游内容质量与准确性',
+
+  'node.add': '追加节点',
+  'node.add.search': '搜索',
+  'node.add.llm': 'LLM',
+  'node.add.output': '输出',
+  'node.add.review': '审查',
+  'node.duration': 'ms',
+  'node.done': '✅ ',
+
+  'panel.results': '📋 运行结果',
+  'panel.error': '❌ 错误',
+  'panel.tips': '💡 提示',
+  'panel.export': '⬇ 导出',
+  'panel.tip1': '从左侧拖拽节点到画布',
+  'panel.tip2': '连接节点形成工作流',
+  'panel.tip3': '点击「运行」执行',
+  'panel.qstart': '💡 快速开始',
+  'panel.qs1': '点击「📂 加载」→ 选一个示例',
+  'panel.qs2': '调整搜索关键词',
+  'panel.qs3': '点击「▶ 运行」',
+
+  'dialog.save.title': '💾 保存流水线',
+  'dialog.save.name': '流水线名称',
+  'dialog.save.placeholder': '流水线',
+  'dialog.save.nodes': '个节点',
+  'dialog.save.cancel': '取消',
+  'dialog.save.confirm': '保存',
+  'dialog.load.title': '📂 加载流水线',
+  'dialog.load.examples': '📦 示例模板',
+  'dialog.load.saved': '💾 已保存',
+  'dialog.load.empty': '暂无流水线',
+  'dialog.load.delete': '删除',
+
+  'error.save': '保存失败',
+  'error.load': '加载失败',
+  'error.delete': '删除失败',
+};
+
+const en = {
+  'app.title': 'PipeMind',
+  'app.subtitle': 'v0.1 MVP',
+  'app.load': '📂 Load',
+  'app.save': '💾 Save',
+  'app.clear': 'Clear',
+  'app.run': '▶ Run',
+  'app.running': '⏳ Running...',
+  'app.lang': '中',
+
+  'palette.title': 'Nodes',
+  'palette.search': 'Search',
+  'palette.search.desc': 'Web search',
+  'palette.llm': 'LLM',
+  'palette.llm.desc': 'AI analysis',
+  'palette.output': 'Output',
+  'palette.output.desc': 'Format results',
+  'palette.review': 'Review',
+  'palette.review.desc': 'Quality check',
+  'palette.hint1': 'Drag nodes to canvas',
+  'palette.hint2': 'Connect to build pipeline',
+
+  'node.search': 'Search',
+  'node.search.placeholder': 'Enter search query...',
+  'node.search.freshness': 'Freshness',
+  'node.search.day': '24h',
+  'node.search.week': '1 week',
+  'node.search.month': '1 month',
+  'node.llm': 'LLM',
+  'node.llm.placeholder': 'Enter processing instructions...',
+  'node.llm.model': 'Model',
+  'node.output': 'Output',
+  'node.output.format': 'Format',
+  'node.output.text': 'Plain text',
+  'node.output.markdown': 'Markdown',
+  'node.output.json': 'JSON',
+  'node.output.desc': 'Receives upstream results',
+  'node.review': 'Review',
+  'node.review.strictness': 'Strictness',
+  'node.review.mild': 'Mild',
+  'node.review.normal': 'Normal',
+  'node.review.strict': 'Strict',
+  'node.review.tone': 'Tone',
+  'node.review.kind': 'Kind',
+  'node.review.balanced': 'Balanced',
+  'node.review.critical': 'Critical',
+  'node.review.desc': 'Quality check upstream content',
+
+  'node.add': 'Add node',
+  'node.add.search': 'Search',
+  'node.add.llm': 'LLM',
+  'node.add.output': 'Output',
+  'node.add.review': 'Review',
+  'node.duration': 'ms',
+  'node.done': '✅ ',
+
+  'panel.results': '📋 Results',
+  'panel.error': '❌ Error',
+  'panel.tips': '💡 Tips',
+  'panel.export': '⬇ Export',
+  'panel.tip1': 'Drag nodes from the palette',
+  'panel.tip2': 'Connect nodes to form a pipeline',
+  'panel.tip3': 'Click Run to execute',
+  'panel.qstart': '💡 Quick Start',
+  'panel.qs1': 'Click Load → pick a template',
+  'panel.qs2': 'Adjust search keywords',
+  'panel.qs3': 'Click Run',
+
+  'dialog.save.title': '💾 Save Pipeline',
+  'dialog.save.name': 'Pipeline Name',
+  'dialog.save.placeholder': 'Pipeline',
+  'dialog.save.nodes': 'nodes',
+  'dialog.save.cancel': 'Cancel',
+  'dialog.save.confirm': 'Save',
+  'dialog.load.title': '📂 Load Pipeline',
+  'dialog.load.examples': '📦 Templates',
+  'dialog.load.saved': '💾 Saved',
+  'dialog.load.empty': 'No pipelines',
+  'dialog.load.delete': 'Delete',
+
+  'error.save': 'Save failed',
+  'error.load': 'Load failed',
+  'error.delete': 'Delete failed',
+};
+
+export function I18nProvider({ children }) {
+  const [lang, setLang] = useState('zh');
+  const toggleLang = () => setLang(l => l === 'zh' ? 'en' : 'zh');
+  const t = (key) => (lang === 'zh' ? zh : en)[key] ?? key;
+  return (
+    <I18nContext.Provider value={{ lang, setLang: toggleLang, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export function useI18n() {
+  return useContext(I18nContext);
+}

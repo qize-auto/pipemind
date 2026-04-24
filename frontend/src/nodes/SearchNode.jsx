@@ -1,9 +1,55 @@
 import { Handle, Position } from 'reactflow';
 import { useState } from 'react';
+import { useI18n } from '../i18n';
 
-export function SearchNode({ data, selected }) {
+// ── Quick-add helper ──
+const NEXT_TYPES = {
+  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
+  llm: [{ type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
+  review: [{ type: 'output', icon: '📤' }],
+  output: [],
+};
+
+function AddButton({ nodeType, nodeId, onAddNode }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const options = NEXT_TYPES[nodeType] || [];
+  if (options.length === 0) return null;
+
+  return (
+    <div style={{ position: 'relative', zIndex: 50 }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+        title={t('node.add')}
+        className="w-5 h-5 flex items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs leading-none transition-colors shadow-md"
+      >
+        +
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-6 z-50 bg-gray-800 border border-gray-700 rounded-lg py-1 shadow-xl min-w-[100px]">
+            {options.map(opt => (
+              <button
+                key={opt.type}
+                onClick={(e) => { e.stopPropagation(); onAddNode(nodeId, opt.type); setOpen(false); }}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors text-left"
+              >
+                <span>{opt.icon}</span>
+                <span>{t(`node.add.${opt.type}`)}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Search Node ──
+export function SearchNode({ data, selected, id }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState(data.query || '');
-
   data.query = query;
 
   return (
@@ -11,33 +57,36 @@ export function SearchNode({ data, selected }) {
       selected ? 'border-cyan-400 ring-2 ring-cyan-400/20' : 'border-cyan-500/30'
     } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-cyan-400 !w-3 !h-3 !border-2 !border-gray-900" />
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-cyan-500/10 rounded-t-xl">
-        <span>🔍</span>
-        <span className="text-sm font-medium text-cyan-300">搜索</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-cyan-500/10 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <span>🔍</span>
+          <span className="text-sm font-medium text-cyan-300">{t('node.search')}</span>
+        </div>
+        {data.onAddNode && <AddButton nodeType="search" nodeId={id} onAddNode={data.onAddNode} />}
       </div>
       <div className="p-3 space-y-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="输入搜索关键词..."
+          placeholder={t('node.search.placeholder')}
           className="w-full px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
         />
         <div className="flex gap-2 text-xs text-gray-500">
-          <span>时效:</span>
+          <span>{t('node.search.freshness')}:</span>
           <select
             value={data.freshness || 'week'}
             onChange={(e) => { data.freshness = e.target.value; }}
             className="bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-gray-300 focus:outline-none"
           >
-            <option value="day">24小时</option>
-            <option value="week">一周</option>
-            <option value="month">一月</option>
+            <option value="day">{t('node.search.day')}</option>
+            <option value="week">{t('node.search.week')}</option>
+            <option value="month">{t('node.search.month')}</option>
           </select>
         </div>
       </div>
       {data.executed && data.result && (
         <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
-          ✅ {data.result.duration}ms
+          {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
       <Handle type="source" position={Position.Right} className="!bg-cyan-400 !w-3 !h-3 !border-2 !border-gray-900" />
@@ -45,9 +94,10 @@ export function SearchNode({ data, selected }) {
   );
 }
 
-export function LLMNode({ data, selected }) {
+// ── LLM Node ──
+export function LLMNode({ data, selected, id }) {
+  const { t } = useI18n();
   const [prompt, setPrompt] = useState(data.prompt || '请总结以下内容的关键信息');
-
   data.prompt = prompt;
 
   return (
@@ -55,20 +105,23 @@ export function LLMNode({ data, selected }) {
       selected ? 'border-purple-400 ring-2 ring-purple-400/20' : 'border-purple-500/30'
     } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-purple-400 !w-3 !h-3 !border-2 !border-gray-900" />
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-purple-500/10 rounded-t-xl">
-        <span>🧠</span>
-        <span className="text-sm font-medium text-purple-300">LLM 处理</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-purple-500/10 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <span>🧠</span>
+          <span className="text-sm font-medium text-purple-300">{t('node.llm')}</span>
+        </div>
+        {data.onAddNode && <AddButton nodeType="llm" nodeId={id} onAddNode={data.onAddNode} />}
       </div>
       <div className="p-3 space-y-2">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="输入处理指令..."
+          placeholder={t('node.llm.placeholder')}
           rows={3}
           className="w-full px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500/50 resize-none"
         />
         <div className="flex gap-2 text-xs text-gray-500">
-          <span>模型:</span>
+          <span>{t('node.llm.model')}:</span>
           <input
             defaultValue={data.model || 'deepseek-chat'}
             onChange={(e) => { data.model = e.target.value; }}
@@ -79,7 +132,7 @@ export function LLMNode({ data, selected }) {
       </div>
       {data.executed && data.result && (
         <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
-          ✅ {data.result.duration}ms
+          {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
       <Handle type="source" position={Position.Right} className="!bg-purple-400 !w-3 !h-3 !border-2 !border-gray-900" />
@@ -87,10 +140,11 @@ export function LLMNode({ data, selected }) {
   );
 }
 
-export function ReviewNode({ data, selected }) {
+// ── Review Node ──
+export function ReviewNode({ data, selected, id }) {
+  const { t } = useI18n();
   const [tone, setTone] = useState(data.tone || 'balanced');
   const [strictness, setStrictness] = useState(data.strictness || 'normal');
-
   data.tone = tone;
   data.strictness = strictness;
 
@@ -99,40 +153,43 @@ export function ReviewNode({ data, selected }) {
       selected ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-amber-500/30'
     } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-amber-400 !w-3 !h-3 !border-2 !border-gray-900" />
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-amber-500/10 rounded-t-xl">
-        <span>🔬</span>
-        <span className="text-sm font-medium text-amber-300">审查</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-amber-500/10 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <span>🔬</span>
+          <span className="text-sm font-medium text-amber-300">{t('node.review')}</span>
+        </div>
+        {data.onAddNode && <AddButton nodeType="review" nodeId={id} onAddNode={data.onAddNode} />}
       </div>
       <div className="p-3 space-y-2">
         <div className="flex gap-2 text-xs text-gray-500">
-          <span>严格度:</span>
+          <span>{t('node.review.strictness')}:</span>
           <select
             value={strictness}
             onChange={(e) => setStrictness(e.target.value)}
             className="flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-gray-300 focus:outline-none"
           >
-            <option value="mild">宽松</option>
-            <option value="normal">适中</option>
-            <option value="strict">严格</option>
+            <option value="mild">{t('node.review.mild')}</option>
+            <option value="normal">{t('node.review.normal')}</option>
+            <option value="strict">{t('node.review.strict')}</option>
           </select>
         </div>
         <div className="flex gap-2 text-xs text-gray-500">
-          <span>语气:</span>
+          <span>{t('node.review.tone')}:</span>
           <select
             value={tone}
             onChange={(e) => setTone(e.target.value)}
             className="flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-gray-300 focus:outline-none"
           >
-            <option value="mild">友善</option>
-            <option value="balanced">客观</option>
-            <option value="critical">尖锐</option>
+            <option value="mild">{t('node.review.kind')}</option>
+            <option value="balanced">{t('node.review.balanced')}</option>
+            <option value="critical">{t('node.review.critical')}</option>
           </select>
         </div>
-        <p className="text-xs text-gray-600">审查上游内容质量与准确性</p>
+        <p className="text-xs text-gray-600">{t('node.review.desc')}</p>
       </div>
       {data.executed && data.result && (
         <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
-          ✅ {data.result.duration}ms
+          {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
       <Handle type="source" position={Position.Right} className="!bg-amber-400 !w-3 !h-3 !border-2 !border-gray-900" />
@@ -140,34 +197,40 @@ export function ReviewNode({ data, selected }) {
   );
 }
 
-export function OutputNode({ data, selected }) {
+// ── Output Node ──
+export function OutputNode({ data, selected, id }) {
+  const { t } = useI18n();
+
   return (
     <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
       selected ? 'border-emerald-400 ring-2 ring-emerald-400/20' : 'border-emerald-500/30'
     } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-emerald-400 !w-3 !h-3 !border-2 !border-gray-900" />
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-emerald-500/10 rounded-t-xl">
-        <span>📤</span>
-        <span className="text-sm font-medium text-emerald-300">输出</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50 bg-emerald-500/10 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <span>📤</span>
+          <span className="text-sm font-medium text-emerald-300">{t('node.output')}</span>
+        </div>
+        {data.onAddNode && <AddButton nodeType="output" nodeId={id} onAddNode={data.onAddNode} />}
       </div>
       <div className="p-3">
         <div className="flex gap-2 text-xs text-gray-500">
-          <span>格式:</span>
+          <span>{t('node.output.format')}:</span>
           <select
             value={data.format || 'text'}
             onChange={(e) => { data.format = e.target.value; }}
             className="flex-1 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-gray-300 focus:outline-none"
           >
-            <option value="text">纯文本</option>
-            <option value="markdown">Markdown</option>
-            <option value="json">JSON</option>
+            <option value="text">{t('node.output.text')}</option>
+            <option value="markdown">{t('node.output.markdown')}</option>
+            <option value="json">{t('node.output.json')}</option>
           </select>
         </div>
-        <p className="text-xs text-gray-600 mt-2">接收上游节点结果</p>
+        <p className="text-xs text-gray-600 mt-2">{t('node.output.desc')}</p>
       </div>
       {data.executed && data.result && (
         <div className="px-3 py-1.5 text-xs text-emerald-400 border-t border-gray-700/50 bg-emerald-500/5 rounded-b-xl">
-          ✅ {data.result.duration}ms
+          {t('node.done')}{data.result.duration}{t('node.duration')}
         </div>
       )}
     </div>

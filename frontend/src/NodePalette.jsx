@@ -1,13 +1,16 @@
 import { useCallback } from 'react';
+import { useI18n } from './i18n';
 
 const nodes = [
-  { type: 'search', icon: '🔍', label: '搜索', color: 'bg-cyan-600/20 border-cyan-500/40 text-cyan-300', desc: '联网搜索信息' },
-  { type: 'llm', icon: '🧠', label: 'LLM 处理', color: 'bg-purple-600/20 border-purple-500/40 text-purple-300', desc: 'AI 分析总结' },
-  { type: 'output', icon: '📤', label: '输出', color: 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300', desc: '格式化展示结果' },
-  { type: 'review', icon: '🔬', label: '审查', color: 'bg-amber-600/20 border-amber-500/40 text-amber-300', desc: '自检幻觉与质量问题' },
+  { type: 'search', icon: '🔍', color: 'bg-cyan-600/20 border-cyan-500/40 text-cyan-300', key: 'search' },
+  { type: 'llm', icon: '🧠', color: 'bg-purple-600/20 border-purple-500/40 text-purple-300', key: 'llm' },
+  { type: 'output', icon: '📤', color: 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300', key: 'output' },
+  { type: 'review', icon: '🔬', color: 'bg-amber-600/20 border-amber-500/40 text-amber-300', key: 'review' },
 ];
 
 export default function NodePalette() {
+  const { t } = useI18n();
+
   const onDragStart = useCallback((event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -16,7 +19,7 @@ export default function NodePalette() {
   return (
     <aside className="w-56 border-r border-gray-800 bg-gray-900/50 flex flex-col">
       <h2 className="text-sm font-medium text-gray-400 px-4 py-3 border-b border-gray-800">
-        节点库
+        {t('palette.title')}
       </h2>
       <div className="flex-1 p-3 space-y-2 overflow-y-auto">
         {nodes.map((node) => (
@@ -29,8 +32,8 @@ export default function NodePalette() {
             <div className="flex items-center gap-2">
               <span className="text-lg">{node.icon}</span>
               <div>
-                <p className="text-sm font-medium">{node.label}</p>
-                <p className="text-xs opacity-70 mt-0.5">{node.desc}</p>
+                <p className="text-sm font-medium">{t(`palette.${node.key}`)}</p>
+                <p className="text-xs opacity-70 mt-0.5">{t(`palette.${node.key}.desc`)}</p>
               </div>
             </div>
           </div>
@@ -38,8 +41,8 @@ export default function NodePalette() {
       </div>
       <div className="p-3 border-t border-gray-800">
         <p className="text-xs text-gray-600 leading-relaxed">
-          拖拽节点到画布<br />
-          连接线串联工作流
+          {t('palette.hint1')}<br />
+          {t('palette.hint2')}
         </p>
       </div>
     </aside>

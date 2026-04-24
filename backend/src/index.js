@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runWorkflow, getExecutionPlan, runSingleNode } from './engine.js';
+import * as mcpManager from './mcp-manager.js';
 import { getDb } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -280,6 +281,49 @@ app.post('/api/export', (req, res) => {
   }
 });
 
+
+// -- MCP Server Management --
+app.post('/api/mcp/connect', async (req, res) => {
+  try {
+    const { serverId, command, args, env, sseUrl } = req.body;
+    if (sseUrl) {
+      const result = await mcpManager.connectSSE(serverId, sseUrl);
+      return res.json({ success: true, ...result });
+    }
+    const result = await mcpManager.connectStdio(serverId, command, args, env);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/mcp/disconnect', async (req, res) => {
+  try {
+    const { serverId } = req.body;
+    await mcpManager.disconnect(serverId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/mcp/status', (_req, res) => {
+  try {
+    const status = mcpManager.getStatus();
+    res.json({ success: true, connections: status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/mcp/tools/:serverId', async (req, res) => {
+  try {
+    const tools = await mcpManager.listTools(req.params.serverId);
+    res.json({ success: true, tools });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🔧 PipeMind Engine running on http://localhost:${PORT}`);

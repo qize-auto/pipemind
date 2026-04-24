@@ -28,3 +28,10 @@ _temp/
 # MemPalace per-project files (issue #185)
 mempalace.yaml
 entities.json
+
+# Generated/test files
+backend/tmp_*.json
+backend/data/*
+backend/pipelines/pipeline_*.json
+backend/pipelines/pipemind-export-*.md
+backend/test-mcp-client.mjs

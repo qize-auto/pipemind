@@ -16,6 +16,7 @@ import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/Sea
 import { MindMapNode } from './nodes/MindMapNode.jsx';
 import { MemoryNode } from './nodes/MemoryNode.jsx';
 import { ConditionNode } from './nodes/ConditionNode.jsx';
+import MCPNode from './nodes/MCPNode.jsx';
 import { I18nProvider, useI18n } from './i18n.jsx';
 
 const nodeTypes = {
@@ -27,13 +28,14 @@ const nodeTypes = {
   mindmap: MindMapNode,
   memory: MemoryNode,
   condition: ConditionNode,
+  mcp_tool: MCPNode,
 };
 
 const NEXT_TYPES = {
-  search: ['llm', 'review', 'kb', 'memory', 'mindmap', 'condition', 'output'],
-  llm: ['review', 'memory', 'mindmap', 'condition', 'output'],
-  review: ['memory', 'mindmap', 'condition', 'output'],
-  kb: ['llm', 'review', 'memory', 'mindmap', 'condition', 'output'],
+  search: ['llm', 'review', 'kb', 'memory', 'mindmap', 'condition', 'mcp_tool', 'output'],
+  llm: ['review', 'memory', 'mindmap', 'condition', 'mcp_tool', 'output'],
+  review: ['memory', 'mindmap', 'condition', 'mcp_tool', 'output'],
+  kb: ['llm', 'review', 'memory', 'mindmap', 'condition', 'mcp_tool', 'output'],
   mindmap: [],
   memory: ['llm', 'review', 'output', 'mindmap', 'condition'],
   condition: ['llm', 'review', 'output', 'mindmap', 'memory'],

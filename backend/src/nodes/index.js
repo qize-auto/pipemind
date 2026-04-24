@@ -6,3 +6,4 @@ export { condition } from './condition.js';
 export { kb } from './kb.js';
 export { mindmap } from './mindmap.js';
 export { memory } from './memory.js';
+export { mcp_tool } from './mcp-tool.js';

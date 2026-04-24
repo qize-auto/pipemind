@@ -16,7 +16,7 @@ export function MemoryNode({ data, selected, id }) {
 
   return (
     <div className={`min-w-[340px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
-      selected ? 'border-violet-400 ring-2 ring-violet-400/20' : (data.error ? 'node-error' : 'border-violet-500/30') ${data.executing ? 'node-executing' : ''}
+      (selected ? 'border-violet-400 ring-2 ring-violet-400/20' : (data.error ? 'node-error' : 'border-violet-500/30')) + (data.executing ? ' node-executing' : '')
     }`}>
       <Handle type="target" position={Position.Left} className="!bg-violet-400 !w-3 !h-3 !border-2 !border-gray-900" />
 

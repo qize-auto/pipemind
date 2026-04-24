@@ -1,1 +1,1 @@
-export { SearchNode, LLMNode, OutputNode } from './SearchNode.jsx';
+export { SearchNode, LLMNode, OutputNode, ReviewNode } from './SearchNode.jsx';

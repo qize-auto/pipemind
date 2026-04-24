@@ -11,12 +11,13 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import NodePalette from './NodePalette.jsx';
-import { SearchNode, LLMNode, OutputNode } from './nodes/index.js';
+import { SearchNode, LLMNode, OutputNode, ReviewNode } from './nodes/index.js';
 
 const nodeTypes = {
   search: SearchNode,
   llm: LLMNode,
   output: OutputNode,
+  review: ReviewNode,
 };
 
 const initialNodes = [];
@@ -69,7 +70,7 @@ export default function App() {
   );
 
   const getDefaultLabel = (type) => {
-    const labels = { search: '搜索', llm: 'LLM 处理', output: '输出' };
+    const labels = { search: '搜索', llm: 'LLM 处理', output: '输出', review: '审查' };
     return labels[type] || type;
   };
 

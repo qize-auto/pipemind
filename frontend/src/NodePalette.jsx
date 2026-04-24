@@ -4,6 +4,7 @@ const nodes = [
   { type: 'search', icon: '🔍', label: '搜索', color: 'bg-cyan-600/20 border-cyan-500/40 text-cyan-300', desc: '联网搜索信息' },
   { type: 'llm', icon: '🧠', label: 'LLM 处理', color: 'bg-purple-600/20 border-purple-500/40 text-purple-300', desc: 'AI 分析总结' },
   { type: 'output', icon: '📤', label: '输出', color: 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300', desc: '格式化展示结果' },
+  { type: 'review', icon: '🔬', label: '审查', color: 'bg-amber-600/20 border-amber-500/40 text-amber-300', desc: '自检幻觉与质量问题' },
 ];
 
 export default function NodePalette() {

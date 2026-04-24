@@ -545,6 +545,65 @@ function AppInner() {
     }
   };
 
+  const fileInputRef = useRef(null);
+  const [importSuccess, setImportSuccess] = useState(null);
+
+  const exportPipeline = () => {
+    if (!nodes.length) return;
+    const name = pipelineName || 'pipeline';
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const data = {
+      name: name,
+      description: `PipeMind pipeline exported at ${ts}`,
+      nodes,
+      edges,
+      createdAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pipeline-${name}-${ts}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        if (!data.nodes || !data.edges) {
+          setImportSuccess('error');
+          setTimeout(() => setImportSuccess(null), 3000);
+          return;
+        }
+        setNodes(data.nodes);
+        setEdges(data.edges);
+        if (data.name) setPipelineName(data.name);
+        setResults(null);
+        setError(null);
+        let maxId = 0;
+        for (const n of (data.nodes || [])) {
+          const num = parseInt(n.id.replace('node_', ''));
+          if (num > maxId) maxId = num;
+        }
+        nodeId = maxId;
+        lastPlacedRef.current = null;
+        setImportSuccess('success');
+        setTimeout(() => setImportSuccess(null), 3000);
+      } catch (err) {
+        setImportSuccess('error');
+        setTimeout(() => setImportSuccess(null), 3000);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-imported
+    e.target.value = '';
+  };
+
   const clearCanvas = () => {
     setNodes([]);
     setEdges([]);
@@ -592,6 +651,26 @@ function AppInner() {
           >
             {t('app.save')}
           </button>
+          <button
+            onClick={exportPipeline}
+            disabled={nodes.length === 0}
+            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 disabled:text-gray-600 rounded-lg transition-colors flex items-center gap-1"
+          >
+            {t('app.export')}
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-1"
+          >
+            {t('app.import')}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: 'none' }}
+            onChange={handleImport}
+          />
           <span className="w-px h-6 bg-gray-800 mx-1"></span>
           <button
             onClick={clearCanvas}
@@ -617,6 +696,15 @@ function AppInner() {
           </button>
         </div>
       </header>
+
+      {/* Import success/error toast */}
+      {importSuccess && (
+        <div className={`flex items-center justify-center gap-2 px-4 py-2 text-sm ${
+          importSuccess === 'success' ? 'bg-emerald-600/20 text-emerald-300 border-b border-emerald-500/30' : 'bg-red-600/20 text-red-300 border-b border-red-500/30'
+        }`}>
+          {importSuccess === 'success' ? '✅ ' + t('app.import.success') : '❌ ' + t('app.import.error')}
+        </div>
+      )}
 
       {/* Autosave Recovery Banner */}
       {showRestoreBanner && (

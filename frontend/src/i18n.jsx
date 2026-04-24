@@ -122,6 +122,12 @@ const zh = {
   'node.config': '节点配置',
   'panel.all': '全部',
 
+  'app.export': '📥 导出',
+  'app.import': '📤 导入',
+  'app.import.success': '导入成功',
+  'app.import.error': '导入失败：格式无效',
+  'app.import.placeholder': '上传 JSON 文件...',
+
   'error.save': '保存失败',
   'error.load': '加载失败',
   'error.delete': '删除失败',
@@ -257,6 +263,12 @@ const en = {
   'node.temperature': 'Temperature',
   'node.config': 'Node Config',
   'panel.all': 'All',
+
+  'app.export': '📥 Export',
+  'app.import': '📤 Import',
+  'app.import.success': 'Import successful',
+  'app.import.error': 'Import failed: invalid format',
+  'app.import.placeholder': 'Upload JSON...',
 
   'error.save': 'Save failed',
   'error.load': 'Load failed',

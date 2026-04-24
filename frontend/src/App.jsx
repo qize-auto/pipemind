@@ -11,6 +11,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import NodePalette from './NodePalette.jsx';
+import ConfigSidebar from './ConfigSidebar.jsx';
 import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/SearchNode.jsx';
 import { MindMapNode } from './nodes/MindMapNode.jsx';
 import { MemoryNode } from './nodes/MemoryNode.jsx';
@@ -44,6 +45,8 @@ function AppInner() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [resultTab, setResultTab] = useState('all');
 
   // Pipeline save/load state
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -151,10 +154,36 @@ function AppInner() {
   );
 
   // ── Run workflow ──
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const updateNodeData = useCallback((nodeId, newData) => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, ...newData } }
+          : n
+      )
+    );
+    setSelectedNode((prev) => {
+      if (prev && prev.id === nodeId) {
+        return { ...prev, data: { ...prev.data, ...newData } };
+      }
+      return prev;
+    });
+  }, [setNodes]);
+
   const runWorkflow = async () => {
     setRunning(true);
     setResults(null);
     setError(null);
+    setSelectedNode(null);
+    setResultTab('all');
     // Step 1: Reset all nodes
     setNodes((nds) =>
       nds.map((n) => ({
@@ -365,6 +394,10 @@ function AppInner() {
               onInit={setReactFlowInstance}
               onDrop={onDrop}
               onDragOver={onDragOver}
+              onNodeClick={onNodeClick}
+              onPaneClick={onPaneClick}
+              connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 3 }}
+              connectionLineType="smoothstep"
               nodeTypes={nodeTypes}
               fitView
               deleteKeyCode="Delete"
@@ -385,55 +418,67 @@ function AppInner() {
           </ReactFlowProvider>
         </div>
 
-        {/* Right: Results Panel */}
-        <aside className="w-80 border-l border-gray-800 bg-gray-900/50 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-            <h2 className="text-sm font-medium text-gray-400">
-              {results ? t('panel.results') : error ? t('panel.error') : t('panel.tips')}
-            </h2>
-            {results && (
-              <button
-                onClick={exportResults}
-                className="text-xs text-gray-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
-              >
+        {/* Right: Config Sidebar or Results Panel or Tips */}
+        {selectedNode ? (
+          <ConfigSidebar selectedNode={selectedNode} updateNodeData={updateNodeData} t={t} />
+        ) : results ? (
+          <aside className="w-80 border-l border-gray-800 bg-gray-900/50 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+              <h2 className="text-sm font-medium text-gray-400">{t('panel.results')}</h2>
+              <button onClick={exportResults} className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
                 {t('panel.export')}
               </button>
-            )}
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 text-sm space-y-3">
-            {!results && !error && (
-              <div className="text-gray-500 space-y-2">
-                <p>{t('panel.tip1')}</p>
-                <p>{t('panel.tip2')}</p>
-                <p>{t('panel.tip3')}</p>
-                <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                  <p className="text-gray-400 text-xs font-medium mb-2">{t('panel.qstart')}:</p>
-                  <ol className="text-gray-500 text-xs space-y-1 list-decimal list-inside">
-                    <li>{t('panel.qs1')}</li>
-                    <li>{t('panel.qs2')}</li>
-                    <li>{t('panel.qs3')}</li>
-                  </ol>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 text-sm space-y-3">
+              <div className="flex gap-1 flex-wrap mb-3">
+                <button onClick={() => setResultTab('all')} className={`px-2 py-1 text-xs rounded ${resultTab === 'all' ? 'bg-indigo-600/30 text-indigo-300' : 'text-gray-500 hover:text-gray-300'}`}>
+                  {t('panel.all')}
+                </button>
+                {Object.entries(results).map(([id, r]) => (
+                  <button key={id} onClick={() => setResultTab(id)} className={`px-2 py-1 text-xs rounded ${resultTab === id ? 'bg-indigo-600/30 text-indigo-300' : 'text-gray-500 hover:text-gray-300'}`}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              {resultTab === 'all' ? (
+                Object.entries(results).map(([id, r]) => (
+                  <ResultCard key={id} id={id} result={r} t={t} />
+                ))
+              ) : (
+                results[resultTab] && <ResultCard id={resultTab} result={results[resultTab]} t={t} expanded />
+              )}
+            </div>
+          </aside>
+        ) : (
+          <aside className="w-80 border-l border-gray-800 bg-gray-900/50 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+              <h2 className="text-sm font-medium text-gray-400">
+                {error ? t('panel.error') : t('panel.tips')}
+              </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 text-sm space-y-3">
+              {error ? (
+                <div className="p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-300 text-xs whitespace-pre-wrap">
+                  {error}
                 </div>
-              </div>
-            )}
-            {error && (
-              <div className="p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-300 text-xs whitespace-pre-wrap">
-                {error}
-              </div>
-            )}
-            {results && Object.entries(results).map(([id, r]) => (
-              <div key={id} className="bg-gray-800/50 rounded-lg border border-gray-700/50 overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 bg-gray-800/80 border-b border-gray-700/50">
-                  <span className="text-xs font-medium text-gray-300">{r.label}</span>
-                  <span className="text-xs text-gray-500">{r.duration}{t('node.duration')}</span>
+              ) : (
+                <div className="text-gray-500 space-y-2">
+                  <p>{t('panel.tip1')}</p>
+                  <p>{t('panel.tip2')}</p>
+                  <p>{t('panel.tip3')}</p>
+                  <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                    <p className="text-gray-400 text-xs font-medium mb-2">{t('panel.qstart')}:</p>
+                    <ol className="text-gray-500 text-xs space-y-1 list-decimal list-inside">
+                      <li>{t('panel.qs1')}</li>
+                      <li>{t('panel.qs2')}</li>
+                      <li>{t('panel.qs3')}</li>
+                    </ol>
+                  </div>
                 </div>
-                <pre className="p-3 text-xs text-gray-400 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-                  {String(r.output || '').slice(0, 2000)}
-                </pre>
-              </div>
-            ))}
-          </div>
-        </aside>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* Save Dialog */}
@@ -526,6 +571,57 @@ function AppInner() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function ResultCard({ id, result, t, expanded }) {
+  const [isExpanded, setIsExpanded] = useState(!!expanded);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(result.output || '');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const typeColors = {
+    search: 'border-l-cyan-500',
+    llm: 'border-l-purple-500',
+    review: 'border-l-amber-500',
+    kb: 'border-l-blue-500',
+    mindmap: 'border-l-emerald-500',
+    memory: 'border-l-violet-500',
+    output: 'border-l-emerald-500',
+  };
+
+  return (
+    <div className={`bg-gray-800/50 rounded-lg border border-gray-700/50 overflow-hidden border-l-4 ${typeColors[result.type] || 'border-l-gray-500'}`}>
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-800/80 border-b border-gray-700/50">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-300">{result.label}</span>
+          <span className="text-xs text-gray-600">{result.type}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">{result.duration}{t('node.duration')}</span>
+          <button onClick={handleCopy} className="text-xs text-gray-500 hover:text-emerald-400 transition-colors px-1">
+            {copied ? '✅' : '📋'}
+          </button>
+          <button onClick={() => setIsExpanded(!isExpanded)} className="text-xs text-gray-500 hover:text-gray-300">
+            {isExpanded ? '▲' : '▼'}
+          </button>
+        </div>
+      </div>
+      {isExpanded && (
+        <pre className="p-3 text-xs text-gray-400 whitespace-pre-wrap break-all max-h-96 overflow-y-auto">
+          {String(result.output || '').slice(0, 10000)}
+        </pre>
+      )}
+      {!isExpanded && (
+        <pre className="p-3 text-xs text-gray-400 whitespace-pre-wrap break-all max-h-24 overflow-y-hidden truncate">
+          {String(result.output || '').slice(0, 200)}
+        </pre>
       )}
     </div>
   );

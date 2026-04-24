@@ -107,6 +107,15 @@ const zh = {
   'dialog.load.empty': '暂无流水线',
   'dialog.load.delete': '删除',
 
+  'node.noConfig': '无需配置',
+  'node.keyword': '搜索关键词',
+  'node.count': '结果数量',
+  'node.prompt': '处理指令',
+  'node.model': '模型',
+  'node.temperature': '温度',
+  'node.config': '节点配置',
+  'panel.all': '全部',
+
   'error.save': '保存失败',
   'error.load': '加载失败',
   'error.delete': '删除失败',
@@ -216,6 +225,15 @@ const en = {
   'dialog.load.saved': '💾 Saved',
   'dialog.load.empty': 'No pipelines',
   'dialog.load.delete': 'Delete',
+
+  'node.noConfig': 'No config needed',
+  'node.keyword': 'Search query',
+  'node.count': 'Result count',
+  'node.prompt': 'Processing prompt',
+  'node.model': 'Model',
+  'node.temperature': 'Temperature',
+  'node.config': 'Node Config',
+  'panel.all': 'All',
 
   'error.save': 'Save failed',
   'error.load': 'Load failed',

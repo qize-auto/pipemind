@@ -5,7 +5,16 @@
   cursor: grab;
 }
 .react-flow__node:active { cursor: grabbing; }
-.react-flow__handle { opacity: 0; }
+.react-flow__handle {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(99, 102, 241, 0.5);
+  background: #1e293b;
+}
+.react-flow__handle:hover { opacity: 1; }
+.react-flow__node:hover .react-flow__handle { opacity: 0.8; }
 .react-flow__controls button {
   background: #1e293b;
   border: 1px solid #334155;

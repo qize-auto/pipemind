@@ -2,6 +2,7 @@
  * LLM node: calls an OpenAI-compatible API for text processing
  * Config: { prompt, model, apiKey, apiBase }
  * If no apiKey configured, falls back to simple text transform
+ * Standalone mode: when no inputs, generates learning content from prompt only
  */
 export async function llm(data = {}, inputs) {
   const inputText = inputs.join('\n\n') || '';
@@ -10,9 +11,7 @@ export async function llm(data = {}, inputs) {
   const apiKey = data.apiKey || process.env.PIPEMIND_LLM_KEY || '';
   const apiBase = data.apiBase || 'https://api.deepseek.com/v1';
 
-  if (!inputText.trim()) {
-    return '[LLM] 没有收到输入内容';
-  }
+  const standalone = !inputText.trim();
 
   // ── Fallback: simple text transform ──
   if (!apiKey || apiKey === 'sk-your-key-here') {
@@ -27,6 +26,13 @@ export async function llm(data = {}, inputs) {
 
   // ── Real LLM call ──
   try {
+    const messages = standalone
+      ? [{ role: 'system', content: prompt }]
+      : [
+          { role: 'system', content: prompt },
+          { role: 'user', content: `请处理以下内容:\n\n${inputText.slice(0, 32000)}` }
+        ];
+
     const response = await fetch(`${apiBase}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -35,10 +41,7 @@ export async function llm(data = {}, inputs) {
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: `请处理以下内容:\n\n${inputText.slice(0, 32000)}` }
-        ],
+        messages,
         temperature: 0.3,
         max_tokens: 2048,
       }),

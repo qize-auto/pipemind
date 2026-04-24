@@ -4,3 +4,23 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# Sensitive config
+.env
+.env.local
+.env.production
+!.env.example
+start.cmd
+# Temp / test files
+test_auth.mjs
+test_prosearch.mjs
+_search_params.json
+*.ps1
+_temp/
+
+# Temp / test files
+test_auth.mjs
+test_prosearch.mjs
+_search_params.json
+*.ps1
+_temp/

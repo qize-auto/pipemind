@@ -1,0 +1,35 @@
+{
+  "name": "深度研究（抗幻觉）",
+  "description": "完整研究流水线：搜索 → AI分析 → 审查质量 → 输出，内置幻觉检测，适合严肃调研",
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "search",
+      "position": { "x": 50, "y": 150 },
+      "data": { "label": "搜索", "query": "2025 AI 发展趋势", "freshness": "month" }
+    },
+    {
+      "id": "node_2",
+      "type": "llm",
+      "position": { "x": 350, "y": 150 },
+      "data": { "label": "LLM 处理", "prompt": "请根据搜索结果，提炼核心观点和关键事实，用结构化方式输出", "model": "deepseek-chat" }
+    },
+    {
+      "id": "node_3",
+      "type": "review",
+      "position": { "x": 650, "y": 150 },
+      "data": { "label": "审查", "strictness": "normal", "tone": "balanced" }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 950, "y": 150 },
+      "data": { "label": "输出", "format": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

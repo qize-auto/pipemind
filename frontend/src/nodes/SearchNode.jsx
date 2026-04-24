@@ -1,4 +1,4 @@
-﻿import { Handle, Position } from 'reactflow';
+import { Handle, Position } from 'reactflow';
 import { useState } from 'react';
 
 export function SearchNode({ data, selected }) {
@@ -7,9 +7,9 @@ export function SearchNode({ data, selected }) {
   data.query = query;
 
   return (
-    <div className={min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl {
+    <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
       selected ? 'border-cyan-400 ring-2 ring-cyan-400/20' : 'border-cyan-500/30'
-    } {data.executed ? 'ring-2 ring-emerald-400/40' : ''}}>
+    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-cyan-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-cyan-500/10 rounded-t-xl">
         <span>🔍</span>
@@ -51,9 +51,9 @@ export function LLMNode({ data, selected }) {
   data.prompt = prompt;
 
   return (
-    <div className={min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl {
+    <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
       selected ? 'border-purple-400 ring-2 ring-purple-400/20' : 'border-purple-500/30'
-    } {data.executed ? 'ring-2 ring-emerald-400/40' : ''}}>
+    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-purple-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-purple-500/10 rounded-t-xl">
         <span>🧠</span>
@@ -95,9 +95,9 @@ export function ReviewNode({ data, selected }) {
   data.strictness = strictness;
 
   return (
-    <div className={min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl {
+    <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
       selected ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-amber-500/30'
-    } {data.executed ? 'ring-2 ring-emerald-400/40' : ''}}>
+    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-amber-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-amber-500/10 rounded-t-xl">
         <span>🔬</span>
@@ -142,9 +142,9 @@ export function ReviewNode({ data, selected }) {
 
 export function OutputNode({ data, selected }) {
   return (
-    <div className={min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl {
+    <div className={`min-w-[220px] rounded-xl border-2 bg-gray-900/90 backdrop-blur-sm shadow-xl ${
       selected ? 'border-emerald-400 ring-2 ring-emerald-400/20' : 'border-emerald-500/30'
-    } {data.executed ? 'ring-2 ring-emerald-400/40' : ''}}>
+    } ${data.executed ? 'ring-2 ring-emerald-400/40' : ''}`}>
       <Handle type="target" position={Position.Left} className="!bg-emerald-400 !w-3 !h-3 !border-2 !border-gray-900" />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-700/50 bg-emerald-500/10 rounded-t-xl">
         <span>📤</span>

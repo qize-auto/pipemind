@@ -1,0 +1,21 @@
+{
+  "name": "快速搜索",
+  "description": "最简单的工作流：搜索关键词 → 直接输出结果，适合快速查资料、验证事实",
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "search",
+      "position": { "x": 50, "y": 100 },
+      "data": { "label": "搜索", "query": "PipeMind 工作流引擎", "freshness": "week" }
+    },
+    {
+      "id": "node_2",
+      "type": "output",
+      "position": { "x": 400, "y": 100 },
+      "data": { "label": "输出", "format": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" }
+  ]
+}

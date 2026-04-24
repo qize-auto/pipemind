@@ -90,6 +90,142 @@
 }
 
 /* Autosave recovery banner */
+/* Group box styles */
+.group-box {
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.05);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.group-box:hover {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(99, 102, 241, 0.1);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+  font-size: 12px;
+  color: #a5b4fc;
+  transition: background 0.2s;
+}
+
+.group-header:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.group-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.group-count {
+  font-size: 11px;
+  color: rgba(165, 180, 252, 0.6);
+}
+
+.group-content {
+  min-height: 60px;
+}
+
+/* Collapsed group node - only shows header bar */
+.react-flow__node-group.collapsed .group-content {
+  display: none;
+}
+
+.react-flow__node-group.collapsed .group-box {
+  min-height: 36px;
+}
+
+.react-flow__node-group {
+  border-radius: 12px !important;
+}
+
+/* Group dialog */
+.group-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.group-dialog {
+  width: 360px;
+  background: #111827;
+  border-radius: 12px;
+  border: 1px solid #374151;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+}
+
+.group-dialog h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin-bottom: 16px;
+}
+
+.group-dialog input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #e5e7eb;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.group-dialog input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.group-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.group-dialog-actions button {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.group-dialog-actions .btn-cancel {
+  background: transparent;
+  color: #9ca3af;
+}
+
+.group-dialog-actions .btn-cancel:hover {
+  color: #f3f4f6;
+}
+
+.group-dialog-actions .btn-confirm {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.group-dialog-actions .btn-confirm:hover {
+  background: #4338ca;
+}
+
 .autosave-banner {
   display: flex;
   align-items: center;

@@ -70,6 +70,10 @@ function AppInner() {
   const [examples, setExamples] = useState([]);
   const [loadError, setLoadError] = useState(null);
 
+  // Grouping state
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
+  const [groupName, setGroupName] = useState('');
+
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const lastPlacedRef = useRef(null);
@@ -623,6 +627,97 @@ function AppInner() {
     lastPlacedRef.current = null;
   };
 
+  // Get selected node ids from ReactFlow's internal selection state
+  const selectedNodeCount = nodes.filter(n => n.selected).length;
+  const selectedNodeIds = nodes.filter(n => n.selected).map(n => n.id);
+  const hasGroupSelected = nodes.some(n => n.selected && n.data?.isGroup);
+
+  // Group selected nodes
+  const handleGroup = () => {
+    const selected = nodes.filter(n => n.selected);
+    if (selected.length < 2) return;
+    setShowGroupDialog(true);
+  };
+
+  const confirmGroup = () => {
+    const name = groupName.trim() || `Group ${Date.now()}`;
+    const selected = nodes.filter(n => n.selected);
+    if (selected.length < 2) return;
+
+    // Calculate group bounds
+    const minX = Math.min(...selected.map(n => n.position.x));
+    const minY = Math.min(...selected.map(n => n.position.y));
+    const maxX = Math.max(...selected.map(n => n.position.x + 300));
+    const maxY = Math.max(...selected.map(n => n.position.y + 200));
+
+    const groupId = `group_${Date.now()}`;
+
+    // Add group node
+    const groupNode = {
+      id: groupId,
+      type: 'group',
+      position: { x: minX - 10, y: minY - 40 },
+      data: {
+        label: name,
+        isGroup: true,
+        groupCollapsed: false,
+        childIds: selected.map(n => n.id),
+      },
+      style: {
+        width: maxX - minX + 20,
+        height: maxY - minY + 60,
+      },
+    };
+
+    // Set parent for child nodes
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (selected.some(s => s.id === n.id)) {
+          return {
+            ...n,
+            parentId: groupId,
+            extent: 'parent',
+            position: {
+              x: n.position.x - groupNode.position.x,
+              y: n.position.y - groupNode.position.y,
+            },
+          };
+        }
+        return n;
+      }).concat(groupNode)
+    );
+
+    setShowGroupDialog(false);
+    setGroupName('');
+  };
+
+  // Ungroup
+  const handleUngroup = () => {
+    const selected = nodes.filter(n => n.selected);
+    const groupNode = selected.find(n => n.data?.isGroup);
+    if (!groupNode) return;
+
+    const childIds = groupNode.data.childIds || [];
+    const groupPos = groupNode.position;
+
+    setNodes((nds) =>
+      nds.filter(n => n.id !== groupNode.id).map((n) => {
+        if (childIds.includes(n.id)) {
+          return {
+            ...n,
+            parentId: undefined,
+            extent: undefined,
+            position: {
+              x: n.position.x + groupPos.x,
+              y: n.position.y + groupPos.y,
+            },
+          };
+        }
+        return n;
+      })
+    );
+  };
+
   const isStepComplete = stepMode && executionStep >= executionPlan.length;
 
   return (
@@ -676,6 +771,22 @@ function AppInner() {
             style={{ display: 'none' }}
             onChange={handleImport}
           />
+          <button
+            onClick={handleGroup}
+            disabled={selectedNodeCount < 2}
+            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 disabled:text-gray-600 rounded-lg transition-colors flex items-center gap-1"
+            title={t('app.group')}
+          >
+            {t('app.group')}
+          </button>
+          {hasGroupSelected && (
+            <button
+              onClick={handleUngroup}
+              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-1"
+            >
+              {t('app.ungroup')}
+            </button>
+          )}
           <span className="w-px h-6 bg-gray-800 mx-1"></span>
           <button
             onClick={clearCanvas}
@@ -981,6 +1092,26 @@ function AppInner() {
               {examples.length === 0 && savedPipelines.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-8">{t('dialog.load.empty')}</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Dialog */}
+      {showGroupDialog && (
+        <div className="group-dialog-overlay" onClick={() => setShowGroupDialog(false)}>
+          <div className="group-dialog" onClick={e => e.stopPropagation()}>
+            <h3>{t('app.group.title')}</h3>
+            <input
+              autoFocus
+              value={groupName}
+              onChange={e => setGroupName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmGroup()}
+              placeholder={t('app.group.placeholder')}
+            />
+            <div className="group-dialog-actions">
+              <button className="btn-cancel" onClick={() => setShowGroupDialog(false)}>{t('app.group.cancel')}</button>
+              <button className="btn-confirm" onClick={confirmGroup}>{t('app.group.confirm')}</button>
             </div>
           </div>
         </div>

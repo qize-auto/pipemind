@@ -8,7 +8,13 @@ const TYPE_CONFIGS = {
   ],
   llm: [
     { key: 'prompt', label: 'prompt', type: 'textarea', placeholderKey: 'node.llm.placeholder', rows: 4 },
-    { key: 'model', label: 'model', type: 'text', default: 'deepseek-chat' },
+    { key: 'model', label: 'model', type: 'select', default: 'deepseek-chat', options: [
+      { value: 'deepseek-chat', labelKey: 'model.ds.chat' },
+      { value: 'deepseek-reasoner', labelKey: 'model.ds.reasoner' },
+      { value: 'qwen3.5-plus', labelKey: 'model.qwen.plus' },
+      { value: 'MiniMax-M2.5', labelKey: 'model.minimax.m25' },
+      { value: 'openclaw', labelKey: 'model.openclaw' },
+    ]},
     { key: 'temperature', label: 'temperature', type: 'range', default: 0.3, min: 0, max: 1, step: 0.1 },
   ],
   kb: [

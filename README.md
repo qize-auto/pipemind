@@ -45,7 +45,7 @@ User Input → 🔍 Search Node → 🧠 LLM Node → 📤 Output Node
 
 - **Node.js** 22+
 - **npm**
-- **QClaw** (for Auth Gateway search proxy — only if using the search node)
+- **OpenClaw** (for Auth Gateway search proxy — only if using the search node)
 
 ### 1. Backend / 后端
 

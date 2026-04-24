@@ -23,6 +23,8 @@ const zh = {
   'palette.review.desc': '自检幻觉与质量问题',
   'palette.kb': '知识库',
   'palette.kb.desc': 'IMA 知识库检索',
+  'palette.mindmap': '思维导图',
+  'palette.mindmap.desc': '以思维导图可视化内容',
   'palette.hint1': '拖拽节点到画布',
   'palette.hint2': '连接线串联工作流',
 
@@ -57,12 +59,16 @@ const zh = {
   'node.kb.kbId': '知识库 ID',
   'node.kb.limit': '结果数',
 
+  'node.mindmap': '思维导图',
+  'node.mindmap.placeholder': '等待上游内容...',
+
   'node.add': '追加节点',
   'node.add.search': '搜索',
   'node.add.llm': 'LLM',
   'node.add.output': '输出',
   'node.add.review': '审查',
   'node.add.kb': '知识库',
+  'node.add.mindmap': '导图',
   'node.duration': 'ms',
   'node.done': '✅ ',
 
@@ -116,6 +122,8 @@ const en = {
   'palette.review.desc': 'Quality check',
   'palette.kb': 'Knowledge Base',
   'palette.kb.desc': 'IMA KB search',
+  'palette.mindmap': 'Mind Map',
+  'palette.mindmap.desc': 'Visualize as mind map',
   'palette.hint1': 'Drag nodes to canvas',
   'palette.hint2': 'Connect to build pipeline',
 
@@ -150,12 +158,16 @@ const en = {
   'node.kb.kbId': 'KB ID',
   'node.kb.limit': 'Max results',
 
+  'node.mindmap': 'Mind Map',
+  'node.mindmap.placeholder': 'Waiting for upstream...',
+
   'node.add': 'Add node',
   'node.add.search': 'Search',
   'node.add.llm': 'LLM',
   'node.add.output': 'Output',
   'node.add.review': 'Review',
   'node.add.kb': 'KB',
+  'node.add.mindmap': 'Mind',
   'node.duration': 'ms',
   'node.done': '✅ ',
 

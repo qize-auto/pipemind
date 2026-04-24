@@ -7,6 +7,7 @@ const nodes = [
   { type: 'output', icon: '📤', color: 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300', key: 'output' },
   { type: 'review', icon: '🔬', color: 'bg-amber-600/20 border-amber-500/40 text-amber-300', key: 'review' },
   { type: 'kb', icon: '📚', color: 'bg-blue-600/20 border-blue-500/40 text-blue-300', key: 'kb' },
+  { type: 'mindmap', icon: '🧠', color: 'bg-rose-600/20 border-rose-500/40 text-rose-300', key: 'mindmap' },
 ];
 
 export default function NodePalette() {

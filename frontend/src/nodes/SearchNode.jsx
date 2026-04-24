@@ -4,11 +4,11 @@ import { useI18n } from '../i18n';
 
 // ── Quick-add helper ──
 const NEXT_TYPES = {
-  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'kb', icon: '📚' }, { type: 'output', icon: '📤' }],
-  llm: [{ type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
-  review: [{ type: 'output', icon: '📤' }],
-  kb: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'output', icon: '📤' }],
-  output: [],
+  search: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'kb', icon: '📚' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  llm: [{ type: 'review', icon: '🔬' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  review: [{ type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  kb: [{ type: 'llm', icon: '🧠' }, { type: 'review', icon: '🔬' }, { type: 'mindmap', icon: '🧠' }, { type: 'output', icon: '📤' }],
+  mindmap: [],
 };
 
 function AddButton({ nodeType, nodeId, onAddNode }) {

@@ -3,3 +3,4 @@ export { llm } from './llm.js';
 export { output } from './output.js';
 export { review } from './review.js';
 export { kb } from './kb.js';
+export { mindmap } from './mindmap.js';

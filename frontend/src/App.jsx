@@ -12,6 +12,7 @@ import 'reactflow/dist/style.css';
 
 import NodePalette from './NodePalette.jsx';
 import { SearchNode, LLMNode, OutputNode, ReviewNode, KBNode } from './nodes/SearchNode.jsx';
+import { MindMapNode } from './nodes/MindMapNode.jsx';
 import { I18nProvider, useI18n } from './i18n.js';
 
 const nodeTypes = {
@@ -20,14 +21,15 @@ const nodeTypes = {
   output: OutputNode,
   review: ReviewNode,
   kb: KBNode,
+  mindmap: MindMapNode,
 };
 
 const NEXT_TYPES = {
-  search: ['llm', 'review', 'kb', 'output'],
-  llm: ['review', 'output'],
-  review: ['output'],
-  kb: ['llm', 'review', 'output'],
-  output: [],
+  search: ['llm', 'review', 'kb', 'mindmap', 'output'],
+  llm: ['review', 'mindmap', 'output'],
+  review: ['mindmap', 'output'],
+  kb: ['llm', 'review', 'mindmap', 'output'],
+  mindmap: [],
 };
 
 let nodeId = 0;
@@ -53,7 +55,7 @@ function AppInner() {
   const lastPlacedRef = useRef(null);
 
   const getDefaultLabel = useCallback((type) => {
-    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb') };
+    const labels = { search: t('node.search'), llm: t('node.llm'), output: t('node.output'), review: t('node.review'), kb: t('node.kb'), mindmap: t('node.mindmap') };
     return labels[type] || type;
   }, [t]);
 

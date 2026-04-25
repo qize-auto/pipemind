@@ -1,0 +1,37 @@
+﻿{
+    "description":  "MemPalace 语义搜索 → 输出结果",
+    "name":  "语义搜索管线",
+    "edges":  [
+                  {
+                      "target":  "out-1",
+                      "source":  "mem-1",
+                      "id":  "e-mem-out"
+                  }
+              ],
+    "nodes":  [
+                  {
+                      "position":  {
+                                       "y":  0,
+                                       "x":  -400
+                                   },
+                      "data":  {
+                                   "query":  "PipeMind evolution",
+                                   "n_results":  3,
+                                   "mode":  "semantic"
+                               },
+                      "id":  "mem-1",
+                      "type":  "memory"
+                  },
+                  {
+                      "position":  {
+                                       "y":  0,
+                                       "x":  200
+                                   },
+                      "data":  {
+
+                               },
+                      "id":  "out-1",
+                      "type":  "output"
+                  }
+              ]
+}

@@ -2,14 +2,15 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import mempalace from '../mempalace-daemon.js';
 
 const WORKSPACE = os.homedir() + '/.qclaw/workspace';
 
 /**
  * Memory node — dual-mode memory search
- *   mode='search' (default): lightning-fast file keyword search (41ms)
- *   mode='semantic': MemPalace-based semantic search (slower, smarter)
- *   mode='status': check MemPalace status
+ *   mode='search' (default): lightning-fast file keyword search (34ms)
+ *   mode='semantic': MemPalace persistent daemon (200ms, semantic)
+ *   mode='status': MemPalace daemon status
  */
 export async function memory(data, inputs, _results) {
   const mode = data.mode || 'search';
@@ -21,91 +22,58 @@ export async function memory(data, inputs, _results) {
       default:         return await keywordSearch(data, inputs);
     }
   } catch (err) {
-    return '\u274c \u8bb0\u5fc6\u8282\u70b9\u9519\u8bef: ' + err.message;
+    return '❌ 记忆节点错误: ' + err.message;
   }
 }
 
-/* ---------- Semantic search via MemPalace ---------- */
+/* ---------- Semantic search (persistent daemon, ~200ms) ---------- */
 async function semanticSearch(data, inputs) {
   const query = data.query || (inputs && inputs[0]) || '';
-  if (!query) return '\u26a0\ufe0f \u8bf7\u8f93\u5165\u641c\u7d22\u5173\u952e\u8bcd';
+  if (!query) return '⚠️ 请输入搜索关键词';
 
   const limit = data.n_results || 3;
   const wing = data.wing || '';
   const room = data.room || '';
 
   try {
-    let cmd = `mempalace search "${query.replace(/"/g, '\\"')}" --results ${limit}`;
-    if (wing) cmd += ` --wing "${wing}"`;
-    if (room) cmd += ` --room "${room}"`;
+    const result = await mempalace.search(query, limit, wing, room);
 
-    const output = execSync(cmd, {
-      encoding: 'utf-8',
-      maxBuffer: 1024 * 100,
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
-    });
-
-    // Parse matches
-    const lines = output.split('\n');
-    const results = [];
-    let current = null;
-    let collecting = false;
-
-    for (const line of lines) {
-      const match = line.match(/\[(\d+)\]\s+(.+?)\s+\/\s+(.+)/);
-      if (match) {
-        if (current) results.push(current);
-        current = { rank: parseInt(match[1]), wing: match[2].trim(), room: match[3].trim(), snippet: '', source: '' };
-        collecting = true;
-      } else if (current && collecting) {
-        if (line.includes('Source:')) {
-          current.source = line.replace(/Source:\s*/g, '').trim();
-        } else if (line.includes('Match:')) {
-          current.score = parseFloat(line.match(/[\d.]+/)?.[0] || '0');
-        } else if (line.trim() && !line.startsWith('\u2500') && !line.startsWith('=')) {
-          current.snippet += line.trim() + '\n';
-        }
-      }
-    }
-    if (current) results.push(current);
-
-    if (results.length === 0) {
-      return '\ud83d\udd0d \u8bed\u4e49\u641c\u7d22\u300c' + query + '\u300d\u672a\u627e\u5230\u7ed3\u679c';
+    if (result.type === 'error' || result.type === 'fatal') {
+      return '⚠️ 语义搜索失败: ' + (result.message || 'unknown');
     }
 
-    let output_formatted = '\ud83e\udde0 \u8bed\u4e49\u641c\u7d22\u300c' + query + '\u300d\u627e\u5230 ' + results.length + ' \u4e2a\u7ed3\u679c\n\n';
-    for (const r of results) {
+    const items = result.results || [];
+    if (items.length === 0) {
+      return '🔍 语义搜索「' + query + '」未找到结果';
+    }
+
+    let output = '🧠 语义搜索「' + query + '」找到 ' + items.length + ' 个结果\n\n';
+    for (const r of items) {
       const scorePct = (r.score * 100).toFixed(0);
-      output_formatted += '\ud83d\udcc4 ' + (r.source || r.room) + ' (\u76f8\u4f3c\u5ea6: ' + scorePct + '%)\n';
-      const snippet = r.snippet.replace(/\n/g, ' ').slice(0, 200);
-      if (snippet) output_formatted += '  ' + snippet + '\n\n';
+      const source = r.source || r.room || 'unknown';
+      output += '📄 ' + source + ' (相似度: ' + scorePct + '%)\n';
+      if (r.snippet) output += '  ' + r.snippet.replace(/\n/g, ' ').slice(0, 250) + '\n\n';
     }
-    return output_formatted.trim();
+    return output.trim();
   } catch (err) {
-    return '\u26a0\ufe0f \u8bed\u4e49\u641c\u7d22\u5931\u8d25: ' + err.message + '\n（\u8bf7\u786e\u8ba4 \u2764\ufe0f MemPalace \u5df2\u5b89\u88c5\u5e76\u521d\u59cb\u5316）';
+    return '⚠️ 语义搜索失败: ' + err.message;
   }
 }
 
-/* ---------- Lightning keyword search ---------- */
+/* ---------- Lightning keyword search (34ms) ---------- */
 async function keywordSearch(data, inputs) {
   const query = data.query || (inputs && inputs[0]) || '';
-  if (!query) return '\u26a0\ufe0f \u8bf7\u8f93\u5165\u641c\u7d22\u5173\u952e\u8bcd';
+  if (!query) return '⚠️ 请输入搜索关键词';
 
   const results = searchFiles(query, WORKSPACE, data.n_results || 5);
   return formatResults(results, query);
 }
 
-/* ---------- MemPalace status ---------- */
+/* ---------- MemPalace daemon status ---------- */
 async function mempalaceStatus() {
-  try {
-    const output = execSync('mempalace status', {
-      encoding: 'utf-8',
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
-    });
-    return '```\n' + output.trim() + '\n```';
-  } catch (err) {
-    return '\u26a0\ufe0f MemPalace \u672a\u5b89\u88c5\u6216\u672a\u521d\u59cb\u5316: ' + err.message;
-  }
+  return mempalace.ready
+    ? '🧠 MemPalace 就绪 🟢'
+    : '🧠 MemPalace 启动中… 🔴';
 }
 
 /* ---------- File-based keyword search ---------- */
@@ -149,10 +117,10 @@ function searchFiles(query, dir, maxResults) {
                 matchedLines: matchedLines.slice(0, 5),
               });
             }
-          } catch { /* skip unreadable */ }
+          } catch { /* skip */ }
         }
       }
-    } catch { /* skip unreadable dirs */ }
+    } catch { /* skip */ }
   }
   walk(root);
   results.sort((a, b) => b.score - a.score);
@@ -161,11 +129,11 @@ function searchFiles(query, dir, maxResults) {
 
 function formatResults(results, query) {
   if (results.length === 0) {
-    return '\ud83d\udd0d \u5173\u952e\u8bcd\u641c\u7d22\u300c' + query + '\u300d\u672a\u627e\u5230\u76f8\u5173\u6587\u4ef6';
+    return '🔍 关键词搜索「' + query + '」未找到相关文件';
   }
-  let output = '\ud83d\udd0d \u5173\u952e\u8bcd\u641c\u7d22\u300c' + query + '\u300d\u627e\u5230 ' + results.length + ' \u4e2a\u6587\u4ef6\n\n';
+  let output = '🔍 关键词搜索「' + query + '」找到 ' + results.length + ' 个文件\n\n';
   for (const r of results) {
-    output += '\ud83d\udcc4 ' + r.file + ' (score: ' + r.score + ')\n';
+    output += '📄 ' + r.file + ' (score: ' + r.score + ')\n';
     output += '  ' + r.snippet + '\n\n';
   }
   return output.trim();

@@ -7,6 +7,7 @@ import { runWorkflow, getExecutionPlan, runSingleNode, pipelineEvents } from './
 import { getRun, getNodeExecutions, createRun, completeRun } from './db.js';
 import * as mcpManager from './mcp-manager.js';
 import { getDb } from './db.js';
+import mempalace from './mempalace-daemon.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PIPELINES_DIR = path.join(__dirname, '..', 'pipelines');
@@ -24,8 +25,11 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // -- Health check --
+// Start MemPalace daemon (background, non-blocking)
+mempalace.start();
+
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', version: '0.1.0' });
+  res.json({ status: 'ok', version: '0.1.0', mempalace: mempalace.ready });
 });
 
 function saveRunToDb(pipelineName, nodes, edges, status, results) {
@@ -390,6 +394,72 @@ app.get('/api/mcp/tools/:serverId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// -- Agent API endpoints (小李集成层) --
+
+// Quick memory search (no pipeline, direct)
+app.post('/api/agent/memory', async (req, res) => {
+  try {
+    const { query, n_results = 5, wing, room } = req.body;
+    if (!query) return res.status(400).json({ error: 'query required' });
+    const result = await mempalace.search(query, n_results, wing, room);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Smart solve: routes task to the right pipeline
+app.post('/api/agent/solve', async (req, res) => {
+  try {
+    const { task, mode = 'auto' } = req.body;
+    if (!task) return res.status(400).json({ error: 'task required' });
+
+    const taskLower = task.toLowerCase();
+
+    // Mode detection
+    const isMemory = mode === 'memory' || taskLower.includes('记忆') || taskLower.includes('记得');
+    const isResearch = mode === 'research' || (taskLower.includes('搜索') && !taskLower.includes('记忆')) || (taskLower.includes('查') && !taskLower.includes('记忆')) || taskLower.includes('分析');
+
+    if (isMemory) {
+      // Memory search — use raw task as query (semantic search handles full sentences)
+      const result = await mempalace.search(task, 8);
+      return res.json({ mode: 'memory', task, result });
+    }
+
+    if (isResearch) {
+      // Build and run a search pipeline
+      // For now: just return structured response with what would run
+      return res.json({
+        mode: 'research',
+        task,
+        message: 'Research pipeline not yet implemented — use manual pipeline for now',
+        hint: 'POST /api/run with search+llm+review nodes'
+      });
+    }
+
+    // Default: direct LLM reasoning
+    return res.json({
+      mode: 'reason',
+      task,
+      message: 'LLM reasoning not yet wired as direct endpoint — use pipelines',
+      hint: 'POST /api/run with llm node'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Daemon status
+app.get('/api/agent/status', (_req, res) => {
+  res.json({
+    ready: mempalace.ready,
+    processAlive: !!mempalace.process,
+    cacheSize: mempalace.cache.size,
+    pendingSearches: mempalace.pending.size
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🔧 PipeMind Engine running on http://localhost:${PORT}`);

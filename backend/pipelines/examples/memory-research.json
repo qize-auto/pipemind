@@ -1,0 +1,35 @@
+{
+  "name": "记忆搜索 + LLM 总结",
+  "description": "搜索工作区记忆 → LLM 总结 → 输出结果",
+  "nodes": [
+    {
+      "id": "mem-1",
+      "type": "memory",
+      "data": {
+        "mode": "search",
+        "query": "PipeMind MCP",
+        "n_results": 3
+      },
+      "position": { "x": -400, "y": 0 }
+    },
+    {
+      "id": "llm-1",
+      "type": "llm",
+      "data": {
+        "prompt": "请用中文总结以下关于这个项目的信息，提取关键点：\n\n{{input}}",
+        "model": "deepseek-chat"
+      },
+      "position": { "x": -100, "y": 0 }
+    },
+    {
+      "id": "out-1",
+      "type": "output",
+      "data": {},
+      "position": { "x": 200, "y": 0 }
+    }
+  ],
+  "edges": [
+    { "id": "e-mem-llm", "source": "mem-1", "target": "llm-1" },
+    { "id": "e-llm-out", "source": "llm-1", "target": "out-1" }
+  ]
+}

@@ -63,6 +63,7 @@ pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:15px;o
 <nav>
   <a href="/" class="active">🏠 Dashboard</a>
   <a href="/chat">💬 Chat</a>
+  <a href="/memory">🧠 Memory</a>
   <a href="/skills">📚 Skills</a>
   <a href="/home">🏡 Home</a>
   <a href="/providers">📡 Providers</a>
@@ -528,6 +529,113 @@ def api_daemon_restart():
     import pipemind_daemon as daemon
     daemon.reset_agent()
     return jsonify({"ok": True, "message": "Agent 已重置"})
+
+
+# ── 记忆进化 API ──────────────────────────────
+
+@app.route("/memory")
+def memory_page():
+    """记忆进化控制台页面"""
+    try:
+        import pipemind_memory_evolution as evo
+        stats = evo.get_stats()
+        logs = evo.get_consolidation_log(days=7)
+    except:
+        stats = {"total": 0, "by_type": {}, "top": []}
+        logs = []
+
+    log_rows = "\n".join(
+        f"<tr><td>{l.get('time','?')[:10]}</td><td>{l.get('sessions',0)}</td>"
+        f"<td>{l.get('knowledge',0)}</td><td>{l.get('archived',0)}</td></tr>"
+        for l in logs[-7:]
+    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No consolidations yet</td></tr>"
+
+    top_items = "\n".join(
+        f"<tr><td>{t.get('type','?')}</td><td>{t['content']}</td><td>{t.get('score',0)}</td></tr>"
+        for t in stats.get("top", [])
+    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No knowledge yet</td></tr>"
+
+    types = "".join(
+        f'<span style="display:inline-block;background:#1f2937;padding:4px 12px;border-radius:12px;margin:4px;font-size:13px">'
+        f'{t}: {c}</span>'
+        for t, c in stats.get("by_type", {}).items()
+    ) or '<span style="color:#484f58">(empty)</span>'
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind Memory</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}}
+h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
+.stat .num{{font-size:28px;color:#58a6ff;font-weight:bold}}
+.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
+th{{color:#8b949e;font-size:12px}}
+.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px;background:#238636;color:#fff}}
+.btn:hover{{background:#2ea043}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
+  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a><a href="/providers">📡 Providers</a>
+</nav>
+
+<h1>🧠 Memory Evolution</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="num">{stats['total']}</div><div class="label">Knowledge</div></div>
+  <div class="stat"><div class="num">{stats.get('avg_importance',0)}</div><div class="label">Avg Importance</div></div>
+  <div class="stat"><div class="num">{stats.get('forget_days',30)}d</div><div class="label">Auto-forget</div></div>
+</div>
+
+<div class="card">
+  <h2>📊 Type Distribution</h2>
+  <div style="margin-top:10px">{types}</div>
+</div>
+
+<div class="card">
+  <h2>🏆 Top Knowledge</h2>
+  <table><tr><th>Type</th><th>Content</th><th>Score</th></tr>{top_items}</table>
+</div>
+
+<div class="card">
+  <h2>📜 Consolidation History</h2>
+  <div style="margin-bottom:10px">
+    <button class="btn" onclick="consolidate()">🔄 Run Consolidation Now</button>
+    <span id="result" style="margin-left:10px;color:#8b949e"></span>
+  </div>
+  <table><tr><th>Date</th><th>Sessions</th><th>Knowledge</th><th>Archived</th></tr>{log_rows}</table>
+</div>
+
+<script>
+function consolidate() {{
+  const r = document.getElementById('result');
+  r.textContent = '⏳ Running...';
+  fetch('/api/memory/consolidate', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{
+      r.textContent = '✅ ' + d.sessions + ' sessions, ' + d.knowledge + ' knowledge';
+      setTimeout(() => location.reload(), 1500);
+    }}).catch(e => r.textContent = '❌ ' + e);
+}}
+</script>
+</body></html>"""
+
+
+@app.route("/api/memory/consolidate", methods=["POST"])
+def api_memory_consolidate():
+    """手动触发记忆聚合"""
+    try:
+        import pipemind_memory_evolution as evo
+        result = evo.daily_consolidate()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 # ── 启动 ──────────────────────────────────────

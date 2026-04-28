@@ -194,8 +194,18 @@ class PipeMind:
         evo.evolution_cycle(self)
 
     def chat(self, user_input: str, verbose: bool = True) -> str:
-        """思考并回复（支持流式输出）"""
+        """思考并回复（支持流式输出 + 记忆注入）"""
         self.messages.append({"role": "user", "content": user_input})
+
+        # ── 注入相关历史知识 ──
+        try:
+            import pipemind_memory_evolution as evo
+            knowledge = evo.get_relevant(user_input)
+            if knowledge:
+                # 插入到 system prompt 之后、user message 之前
+                self.messages.insert(1, {"role": "system", "content": knowledge})
+        except:
+            pass
         max_turns = self.cfg.get("agent", {}).get("max_turns", 50)
 
         for turn in range(max_turns):

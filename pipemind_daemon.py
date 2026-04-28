@@ -6,7 +6,7 @@
   pipemind.py --stop    →  停止守护进程
 """
 
-import os, sys, json, time, signal, threading, atexit, subprocess
+import os, sys, json, time, signal, threading, atexit, subprocess, datetime
 
 PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 MEMORY_DIR = os.path.join(PIPEMIND_DIR, "memory")
@@ -163,13 +163,45 @@ def run_server(port=9090):
     print(f"\n  🌐 PipeMind 守护进程")
     print(f"     http://localhost:{port}")
     print(f"     PID: {os.getpid()}")
+    print(f"     🧠 记忆进化: 每日凌晨聚合")
     print(f"     Ctrl+C 停止\n")
+
+    # ── 启动记忆进化定时器 ──
+    _start_consolidation_timer()
 
     # 启动 Web 服务器（阻塞）
     pipemind_web.run(port=port, daemon_mode=True)
 
     _cleanup_pid()
     _running = False
+
+
+def _start_consolidation_timer():
+    """启动每日聚合定时器（后台线程，每小时检查一次）"""
+    def _timer_loop():
+        last_date = None
+        while _running:
+            try:
+                now = datetime.datetime.now()
+                today = now.strftime("%Y-%m-%d")
+
+                # 凌晨 3:00-3:05 之间执行，每天一次
+                if now.hour == 3 and 0 <= now.minute < 5 and last_date != today:
+                    last_date = today
+                    try:
+                        import pipemind_memory_evolution as evo
+                        print(f"  🧠 开始每日记忆聚合 ({today})...")
+                        result = evo.daily_consolidate()
+                        print(f"  ✅ 聚合完成: {result['sessions']} 会话, "
+                              f"{result['knowledge']} 知识, {result['archived']} 归档")
+                    except Exception as e:
+                        print(f"  ⚠ 聚合失败: {e}")
+            except:
+                pass
+            time.sleep(3600)  # 每小时检查一次
+
+    t = threading.Thread(target=_timer_loop, daemon=True)
+    t.start()
 
 
 if __name__ == "__main__":

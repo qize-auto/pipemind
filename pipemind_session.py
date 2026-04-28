@@ -143,6 +143,36 @@ def get_recent_sessions(limit=10):
         "last_active": r[3]
     } for r in rows]
 
+def get_sessions_by_date(date_str=None, limit=20):
+    """获取指定日期的会话（含完整消息）
+
+    Args:
+        date_str: 日期字符串 YYYY-MM-DD，默认今天
+        limit: 最多返回 N 个会话
+    Returns:
+        [(session_id, [messages])]
+    """
+    if date_str is None:
+        date_str = datetime.date.today().isoformat()
+    db = _get_db()
+    with _lock:
+        rows = db.execute(
+            "SELECT DISTINCT session_id FROM sessions WHERE created_at LIKE ? ORDER BY created_at DESC LIMIT ?",
+            (f"{date_str}%", limit)
+        ).fetchall()
+
+    results = []
+    for (sid,) in rows:
+        msgs = db.execute(
+            "SELECT role, content, created_at FROM sessions WHERE session_id = ? ORDER BY created_at",
+            (sid,)
+        ).fetchall()
+        messages = [{"role": r[0], "content": r[1], "time": r[2]} for r in msgs if r[1]]
+        if messages:
+            results.append((sid, messages))
+    return results
+
+
 def search_history(query, limit=10):
     """搜索历史对话"""
     db = _get_db()

@@ -415,6 +415,13 @@ def run_interactive():
     """交互模式"""
     agent = PipeMind()
     show_banner()
+    
+    # 启动技能热加载监控
+    try:
+        import pipemind_skills as pmsk
+        pmsk.start_watcher()
+    except:
+        pass
 
     commands = {
         "/exit": "Exit", "/quit": "Exit",
@@ -430,6 +437,7 @@ def run_interactive():
         "/sessions": "List recent sessions",
         "/providers": "View & switch API provider",
         "/context": "View token usage",
+        "/reload": "Hot-reload skills (scan for new/updated)",
         "/help": "Show this help",
     }
 
@@ -603,6 +611,15 @@ def run_interactive():
                     print(f"\n{compress.format_stats(stats)}")
                 else:
                     print(f"\n  📊 {len(agent.messages)} 条消息")
+                continue
+
+            elif cmd == "/reload":
+                try:
+                    import pipemind_skills as pmsk
+                    count = pmsk.reload()
+                    print(f"  ✅ 热加载完成: {count} 个技能")
+                except Exception as e:
+                    print(f"  ❌ {e}")
                 continue
 
             elif cmd == "/help":

@@ -177,6 +177,20 @@
     ],
     "updated": "2026-04-29T03:54:19.391164"
   },
+  "pipemind-teamolab-academic-writing": {
+    "name": "pipemind-teamolab-academic-writing",
+    "desc": "You are an academic writing expert specializing in scholarly papers, literature reviews, research methodology.",
+    "tags": [
+      "search-and-research",
+      "academic-writing"
+    ],
+    "cat": "general",
+    "pitfalls": [
+      "吸收技能可能需要适配 PipeMind 的 API",
+      "此技能是自动吸收的"
+    ],
+    "updated": "2026-04-29T04:48:02.847821"
+  },
   "pipemind-windows-deep": {
     "name": "pipemind-windows-deep",
     "desc": "PipeMind Windows 深度集成技能 — 注册表、服务、计划任务",

@@ -206,6 +206,49 @@ def call_with_failover(messages, tools=None, max_retries=2):
 
 # ── CLI ────────────────────────────────────────
 
+# ── Ollama 集成 ────────────────────────────────
+
+def detect_ollama():
+    """检测本机 ollama 服务是否运行，返回可用模型列表"""
+    try:
+        req = urllib.request.Request("http://localhost:11434/api/tags")
+        resp = json.loads(urllib.request.urlopen(req, timeout=5).read().decode())
+        models = [m["name"] for m in resp.get("models", [])]
+        return models
+    except:
+        return []
+
+def add_ollama_provider():
+    """自动检测并添加 ollama 到 provider 列表"""
+    models = detect_ollama()
+    if not models:
+        return {"error": "ollama 未运行或无法连接 (localhost:11434)"}
+    
+    providers = load_providers()
+    existing = [p for p in providers if p.get("provider") == "ollama"]
+    
+    added = 0
+    for model in models:
+        name = f"ollama-{model}"
+        if not any(p["name"] == name for p in providers):
+            providers.append({
+                "name": name,
+                "provider": "ollama",
+                "base_url": "http://localhost:11434/v1",
+                "model": model,
+                "api_key": "ollama",
+                "priority": 99,
+                "enabled": True,
+                "timeout": 120,
+            })
+            added += 1
+    
+    if added:
+        save_providers(providers)
+    
+    return {"models": models, "added": added, "total": len(models)}
+
+
 def main():
     import sys
     args = sys.argv[1:]
@@ -248,11 +291,25 @@ def main():
                 print(f"     {result['detail']}")
         print()
     
+    elif "--add-ollama" in args:
+        result = add_ollama_provider()
+        if "error" in result:
+            print(f"\n  ❌ {result['error']}")
+            print("  💡 请先启动 ollama: ollama serve")
+        else:
+            print(f"\n  ✅ ollama 集成完成")
+            print(f"     检测到模型: {', '.join(result['models'])}")
+            print(f"     新增: {result['added']} / 共 {result['total']}")
+            print(f"     ollama 已作为最低优先级后备 (priority=99)")
+            print(f"     网络不通时自动切到本地模型")
+        print()
+    
     else:
         print("用法:")
-        print("  python pipemind_provider.py --list   查看 Provider")
-        print("  python pipemind_provider.py --switch 切换默认")
-        print("  python pipemind_provider.py --test   测试连通性")
+        print("  python pipemind_provider.py --list        查看 Provider")
+        print("  python pipemind_provider.py --switch      切换默认")
+        print("  python pipemind_provider.py --test        测试连通性")
+        print("  python pipemind_provider.py --add-ollama  集成本地 ollama")
 
 if __name__ == "__main__":
     main()

@@ -15,7 +15,7 @@ PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 REGISTRY_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_registry.json")
 HUNTER_CACHE = os.path.join(PIPEMIND_DIR, "memory", "_hunter_cache.json")
-ABSORBED_LOG = os.path.join(PIPEMIND_DIR, "memory", "_absorbed_skills.json")
+CANDIDATE_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_candidates.json")
 
 # ── 外部技能源 ──────────────────────────────
 
@@ -348,8 +348,20 @@ def hunt(query):
             result = absorb_skill(top["name"], top["source"], top)
             return {"source": "external", "absorbed": result, "matches": external}
         else:
-            _log(f"  质量评分 {quality} < 0.5，跳过吸收（仅报告）")
-            return {"source": "external_low_quality", "matches": external}
+            _log(f"  质量评分 {quality} < 0.5，存入候选名单")
+            # 存入候选名单，不丢
+            candidates = _load_json(CANDIDATE_FILE, {"candidates": []})
+            # 去重
+            existing = {c["name"] for c in candidates["candidates"]}
+            for m in external[:5]:
+                if m["name"] not in existing:
+                    m["hunted_at"] = datetime.datetime.now().isoformat()
+                    m["hunt_query"] = query
+                    candidates["candidates"].append(m)
+            candidates["candidates"] = candidates["candidates"][-50:]  # 最多保留 50 条
+            _save_json(CANDIDATE_FILE, candidates)
+            _log(f"  候选名单现有 {len(candidates['candidates'])} 条待审技能")
+            return {"source": "candidates", "matches": external}
     
     _log("没有找到外部匹配")
     return {"source": "none", "matches": []}
@@ -429,6 +441,30 @@ def main():
             if result.get("absorbed"):
                 a = result["absorbed"]
                 print(f"  ✅ 已吸收: {a.get('local_name', '?')}")
+            if result.get("matches"):
+                print(f"  候选: {len(result['matches'])} 条")
+    
+    elif "--candidates" in args:
+        candidates = _load_json(CANDIDATE_FILE, {"candidates": []})
+        if not candidates["candidates"]:
+            print("\n📋 候选名单为空")
+        else:
+            print(f"\n📋 候选名单 ({len(candidates['candidates'])} 条):\n")
+            for i, c in enumerate(candidates["candidates"]):
+                print(f"  [{i}] ❓{c.get('quality', '?')} {c['name']}")
+                print(f"      {c['desc'][:80]}")
+                print(f"      搜索: {c.get('hunt_query', '?')}")
+                print()
+            ch = input("  输入编号确认吸收 (空=返回): ").strip()
+            if ch.isdigit():
+                idx = int(ch)
+                if 0 <= idx < len(candidates["candidates"]):
+                    c = candidates["candidates"][idx]
+                    result = absorb_skill(c["name"], c["source"], c)
+                    print(f"  ✅ 已吸收: {result.get('local_name', c['name'])}")
+                    # 从候选名单移除
+                    candidates["candidates"].pop(idx)
+                    _save_json(CANDIDATE_FILE, candidates)
     
     elif "--upgrade" in args:
         upgrade_absorbed()
@@ -436,11 +472,11 @@ def main():
     elif "--status" in args:
         cache = _load_json(HUNTER_CACHE, {})
         total = sum(len(v) for v in cache.values())
-        absorbed = _load_json(ABSORBED_LOG, {"absorbed": []})
+        candidates = _load_json(CANDIDATE_FILE, {"candidates": []})
         print(f"\n📊 技能猎人状态")
         print(f"   探索的源: {len(cache)} / {len(SKILL_SOURCES)}")
         print(f"   缓存技能: {total}")
-        print(f"   已吸收: {len(absorbed.get('absorbed', []))}")
+        print(f"   候选待审: {len(candidates.get('candidates', []))}")
     
     else:
         print("用法:")
@@ -448,7 +484,8 @@ def main():
         print("  python pipemind_hunter.py --search <关键词>  搜索外部技能")
         print("  python pipemind_hunter.py --absorb <name>    吸收技能")
         print("  python pipemind_hunter.py --hunt <任务>      完整狩猎")
-        print("  python pipemind_hunter.py --upgrade          升级已吸收技能")
+        print("  python pipemind_hunter.py --candidates      查看待审技能")
+        print("  python pipemind_hunter.py --upgrade         检查更新")
         print("  python pipemind_hunter.py --status           查看状态")
 
 if __name__ == "__main__":

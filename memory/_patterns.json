@@ -1,0 +1,26 @@
+{
+  "patterns": [
+    {
+      "id": "7a0a0956",
+      "name": "文件写入冲突",
+      "signals": [
+        "写入",
+        "write",
+        "覆盖",
+        "保存文件",
+        "创建文件"
+      ],
+      "solution": "写入前先用 os.path.exists() 检查是否存在，存在则询问是否覆盖",
+      "risk": "Windows 路径用双反斜杠",
+      "success_count": 1,
+      "fail_count": 0,
+      "created": "2026-04-29T00:44:09.759469",
+      "last_used": "2026-04-29T00:44:09.759492"
+    }
+  ],
+  "stats": {
+    "total": 1,
+    "success": 0,
+    "fail": 0
+  }
+}

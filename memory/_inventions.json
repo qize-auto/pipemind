@@ -1,0 +1,22 @@
+[
+  {
+    "id": "d24a75e8",
+    "name": "文件夹监控工具",
+    "category": "自动化",
+    "description": "监控文件夹变化并通知",
+    "approach": "使用 watchdog 库",
+    "success": true,
+    "created": "2026-04-29T00:50:35.527876",
+    "used_count": 0
+  },
+  {
+    "id": "ca8abd87",
+    "name": "批量重命名",
+    "category": "文件管理",
+    "description": "批量重命名文件",
+    "approach": "os.rename + glob",
+    "success": true,
+    "created": "2026-04-29T00:50:35.535936",
+    "used_count": 0
+  }
+]

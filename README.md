@@ -28,12 +28,19 @@ python pipemind.py
 ## ✨ Features
 
 - **🧠 Persistent Memory** — Every conversation is saved to SQLite. Shut it down, restart your PC, come back tomorrow — it picks up exactly where you left off. Searchable via `/history`.
-- **🔄 Auto-Failover** — Configure multiple API providers (DeepSeek, OpenAI, or any compatible endpoint). If one goes down, PipeMind switches mid-conversation with zero interruption.
-- **📦 Context Compression** — Long conversations are automatically compressed to stay within token limits. No more "context length exceeded" errors.
-- **📚 Skill System (13 skills)** — Skills auto-inject knowledge into the system prompt. Each one includes a `## Pitfalls` section — lessons learned from real mistakes.
+- **🔄 Auto-Failover** — Configure multiple API providers (DeepSeek, OpenAI, ollama local). If one goes down, PipeMind switches mid-conversation with zero interruption.
+- **📦 Context Compression** — Long conversations are automatically compressed to stay within token limits.
+- **📚 Skill System (16 skills)** — Skills auto-inject knowledge into the system prompt. Each one includes a `## Pitfalls` section — lessons learned from real mistakes.
 - **👥 Sub-Agent Delegation** — Complex tasks are decomposed into parallel sub-tasks automatically.
-- **🩹 Self-Healing** — SHA-256 file integrity baseline. If core files are tampered with, PipeMind detects and restores them from the latest backup.
-- **🌙 Dream System** — A three-phase reflection cycle (Light → REM → Deep) runs in the background: scan recent activity, extract patterns, promote lessons into timed reminders.
+- **🩹 Self-Healing** — SHA-256 file integrity baseline. Tampered files are detected and restored.
+- **🌙 Dream System** — Three-phase reflection cycle (Light → REM → Deep): scan activity, extract patterns, promote lessons into timed nudge reminders.
+- **🎯 Skill Hunter** — Searches 5,138 OpenClaw skills. High-quality matches (≥0.5) are auto-absorbed. Low-quality matches go to a candidate list for your review.
+- **🏡 Home Network** — Open your door for other PipeMind instances to visit. Exchange knowledge, bring back lessons. Watch AI conversations without participating. Security filters prevent data leaks.
+- **⚡ Skill Hot-Reload** — Drop a new SKILL.md into skills/ — detected within 5 seconds, loaded without restart. Or use `/reload`.
+- **💬 Streaming Chat** — Typewriter effect. Tokens appear as they're generated. Falls back to normal mode when tool calls are needed.
+- **🌐 Web Console** — `python pipemind_web.py` opens a local dashboard at `localhost:9090` with Chat, Skills, Home, and Provider management.
+- **🧠 Vector Memory** — Semantic search powered by sentence-transformers (optional). Install `pip install sentence-transformers` for natural language memory queries.
+- **🤖 Ollama Integration** — `--add-ollama` auto-detects local ollama models and adds them as lowest-priority fallback. When the network is down, PipeMind switches to local LLMs automatically.
 
 ---
 
@@ -116,6 +123,24 @@ python pipemind_backup.py --heal      # Restore tampered files
 
 ---
 
+## 🛠️ Standalone Tools
+
+```cmd
+pipemind_dream.py              # Full dream cycle + nudge reminders
+pipemind_backup.py             # Backup, check, heal
+pipemind_session.py            # Session list & history search
+pipemind_provider.py           # Provider management + ollama setup
+pipemind_hunter.py             # Hunt skills from 5,138 sources
+pipemind_skillforge.py         # Self-create new skills
+pipemind_home.py               # Open/close home, visit others
+pipemind_vectormemory.py       # Semantic search (optional)
+pipemind_web.py                # Web console (port 9090)
+pipemind_delegate.py           # Sub-agent delegation
+pipemind_compress.py           # Context compression test
+```
+
+---
+
 ## 📦 What's Included
 
 ### Modules
@@ -131,7 +156,13 @@ python pipemind_backup.py --heal      # Restore tampered files
 | `pipemind_dream.py` | - | Dream cycle |
 | `pipemind_backup.py` | - | Backup & self-heal |
 | `pipemind_brain.py` | - | Context management, metacognition |
-| 13 more modules | - | Security, evolution, vision, voice, diary… |
+| `pipemind_hunter.py` | - | Skill hunter (5,138 sources) |
+| `pipemind_home.py` | - | Home network & knowledge exchange |
+| `pipemind_skillforge.py` | - | Skill registry & self-creation |
+| `pipemind_web.py` | - | Web console (Flask) |
+| `pipemind_vectormemory.py` | - | Semantic search (optional) |
+| `pipemind_tui.py` | - | Rich terminal output |
+| 7 more modules | - | Security, evolution, vision, voice, diary… |
 
 ### Skills
 

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+memory/_backups/
+output/
+memory/.dreams/
+config.json
+*.nudge.json

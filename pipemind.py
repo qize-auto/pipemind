@@ -194,11 +194,32 @@ class PipeMind:
         evo.evolution_cycle(self)
 
     def chat(self, user_input: str, verbose: bool = True) -> str:
-        """思考并回复"""
+        """思考并回复（支持流式输出）"""
         self.messages.append({"role": "user", "content": user_input})
         max_turns = self.cfg.get("agent", {}).get("max_turns", 50)
 
         for turn in range(max_turns):
+            # 第一轮优先用流式（打字机效果）
+            if turn == 0:
+                stream_content = self._stream_chat()
+                if stream_content is not None:
+                    content = stream_content
+                    if content:
+                        self.messages.append({"role": "assistant", "content": content})
+                        # 保存到会话数据库
+                        if HAS_SESSION:
+                            try:
+                                pmsession.save_turn(self.session_id, "user", user_input)
+                                pmsession.save_turn(self.session_id, "assistant", content)
+                            except: pass
+                        # 上下文压缩
+                        if HAS_COMPRESS:
+                            try:
+                                self.messages, _ = compress.compress_cycle(self.messages, verbose)
+                            except: pass
+                    return content
+
+            # 非流式回退（工具调用轮次）
             response = api_call(self.messages)
             if "error" in response:
                 err = response["error"]
@@ -268,6 +289,81 @@ class PipeMind:
 
         return f"{C['yellow']}⚠ 已达最大轮数{C['r']}"
 
+    def _stream_chat(self):
+        """流式 API 调用（打字机效果），遇到工具调用则返回 None 回退"""
+        cfg = config.get_model_info()
+        api_key = cfg.get("api_key", "")
+        if not api_key:
+            return None
+        
+        body = json.dumps({
+            "model": cfg.get("model_name", "deepseek-chat"),
+            "messages": self.messages,
+            "max_tokens": cfg.get("max_tokens", 8192),
+            "temperature": cfg.get("temperature", 0.7),
+            "stream": True,
+            "tools": tools.get_all_schemas(),
+            "tool_choice": "auto",
+        }).encode()
+        
+        base_url = cfg.get("base_url", "https://api.deepseek.com/v1").rstrip("/")
+        full_content = []
+        has_tool_call = False
+        buffer = ""
+        
+        try:
+            req = urllib.request.Request(
+                f"{base_url}/chat/completions", data=body,
+                headers={"Content-Type": "application/json",
+                         "Authorization": f"Bearer {api_key}"}
+            )
+            resp = urllib.request.urlopen(req, timeout=120)
+            
+            print(f"  {C['b']}{C['cyan']}🤖{C['r']} ", end="", flush=True)
+            
+            for line in resp:
+                line = line.decode("utf-8", errors="replace").strip()
+                if not line or line.startswith(":"):
+                    continue
+                if line == "data: [DONE]":
+                    break
+                if line.startswith("data: "):
+                    try:
+                        chunk = json.loads(line[6:])
+                    except:
+                        continue
+                    
+                    choices = chunk.get("choices", [])
+                    if not choices:
+                        continue
+                    
+                    delta = choices[0].get("delta", {})
+                    
+                    # 检测工具调用
+                    if "tool_calls" in delta:
+                        has_tool_call = True
+                        break
+                    
+                    content = delta.get("content", "")
+                    if content:
+                        print(content, end="", flush=True)
+                        full_content.append(content)
+                        buffer += content
+            
+            print()
+            
+            if has_tool_call:
+                return None  # 回退到非流式
+            
+            return "".join(full_content)
+            
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                return None  # 限流，回退非流式重试
+            return None
+        except Exception:
+            return None
+    
     def _extract(self, response: dict) -> tuple:
         c = response.get("choices", [{}])[0]
         m = c.get("message", {})

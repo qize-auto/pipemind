@@ -24,8 +24,35 @@ HARVEST_FILE = os.path.join(PIPEMIND_DIR, "memory", "_home_harvest.json")
 DEFAULT_PORT = 9788  # 默认端口，取 PM 字母序
 MAX_GUESTS = 5       # 最大并发访客
 RATE_LIMIT = 10      # 每分钟最大消息数
+RATE_WINDOW = 60     # 限流窗口（秒）
 IDLE_TIMEOUT = 1800  # 30 秒无活动断开
 MSG_TIMEOUT = 60     # 单条消息等待超时
+
+# ── 公开模式 ──────────────────────────────────
+
+def get_public_ip():
+    """获取公网 IP"""
+    import urllib.request
+    try:
+        req = urllib.request.Request("https://api.ipify.org?format=json",
+                                     headers={"User-Agent": "curl/8.0"})
+        resp = json.loads(urllib.request.urlopen(req, timeout=10).read().decode())
+        return resp.get("ip", "unknown")
+    except:
+        try:
+            req = urllib.request.Request("https://httpbin.org/ip",
+                                         headers={"User-Agent": "curl/8.0"})
+            resp = json.loads(urllib.request.urlopen(req, timeout=10).read().decode())
+            return resp.get("origin", "unknown")
+        except:
+            return "unknown"
+
+def generate_connect_string(home_id, host, port, public=False):
+    """生成可供分享的连接字符串"""
+    if public:
+        pub_ip = get_public_ip()
+        return f"PM:{home_id}@{pub_ip}:{port}"
+    return f"PM:{home_id}@{host}:{port}"
 
 # ── 敏感内容过滤 ──────────────────────────────
 
@@ -125,14 +152,18 @@ _server_running = False
 class HomeServer:
     """家园 TCP 服务器"""
     
-    def __init__(self, host="0.0.0.0", port=DEFAULT_PORT):
+    def __init__(self, host="0.0.0.0", port=DEFAULT_PORT, public=False):
         self.host = host
         self.port = port
+        self.public = public
         self.sock = None
         self.clients = {}  # addr -> {conn, addr, name, last_active}
         self.lock = threading.Lock()
         self.state = _load_state()
         self.log_callback = None
+        self._rate_limit = {}  # ip -> [timestamps]
+        self._allowed_ips = set()
+        self._blocked_ips = set()
     
     def start(self):
         global _server_running
@@ -154,6 +185,22 @@ class HomeServer:
             while _server_running:
                 try:
                     conn, addr = self.sock.accept()
+                    ip = addr[0]
+                    
+                    # 限流 & 黑名单检查
+                    if ip in self._blocked_ips:
+                        conn.close()
+                        continue
+                    
+                    now = time.time()
+                    self._rate_limit.setdefault(ip, [])
+                    self._rate_limit[ip] = [t for t in self._rate_limit[ip] if now - t < RATE_WINDOW]
+                    if len(self._rate_limit[ip]) >= RATE_LIMIT:
+                        conn.close()
+                        _log(f"⛔ 限流: {ip}")
+                        continue
+                    self._rate_limit[ip].append(now)
+                    
                     if len(self.clients) >= MAX_GUESTS:
                         conn.close()
                         _log(f"❌ 访客已满，拒绝 {addr[0]}")
@@ -490,22 +537,30 @@ def main():
     
     if "--open" in args:
         if state.get("open"):
-            print(f"🚪 门已经开着了 ({state['home_id']} :{state.get('port', DEFAULT_PORT)})")
+            print(f"🚪 门已经开着了 ({state['home_id']} :{state.get('port', DEFAULT_PORT)}")
             return
         
+        is_public = "--public" in args
         port = DEFAULT_PORT
         for i, a in enumerate(args):
             if a == "--port" and i + 1 < len(args):
-                try:
-                    port = int(args[i + 1])
+                try: port = int(args[i + 1])
                 except: pass
         
-        server = HomeServer(port=port)
+        server = HomeServer(port=port, public=is_public)
+        
+        connect_str = generate_connect_string(state['home_id'], '0.0.0.0', port, is_public)
+        
         print(f"\n  🚪 开门中...")
         print(f"  🏠 家园 ID: {state['home_id']}")
         print(f"  📡 端口: {port}")
-        print(f"  👥 最大访客: {MAX_GUESTS}")
-        print(f"\n  💡 告诉朋友: python pipemind_home.py --connect {state['home_id']} --host 你的IP")
+        print(f"  🌐 模式: {'公开' if is_public else '仅本地'}")
+        if is_public:
+            print(f"  🔗 连接字符串: {connect_str}")
+            print(f"     分享给朋友: --connect {state['home_id']} --host {get_public_ip()}")
+        else:
+            print(f"  🔗 本地连接: {connect_str}")
+        print(f"  👥 最大访客: {MAX_GUESTS} | ⛔ 限流: {RATE_LIMIT}/分钟/IP")
         print(f"\n  按 Ctrl+C 关门\n")
         
         global _server_thread
@@ -534,9 +589,13 @@ def main():
         print(f"\n  🏠 家园状态:")
         print(f"     ID: {state.get('home_id', '?')}")
         print(f"     门: {'🚪 开' if state.get('open') else '🚪 关'}")
+        print(f"     端口: {state.get('port', DEFAULT_PORT)}")
+        print(f"     公开: {'🌐 是' if state.get('public', False) else '🔒 否'}")
         print(f"     总访问: {state.get('total_visits', 0)}")
         print(f"     收到知识: {state.get('knowledge_received', 0)}")
         print(f"     分享知识: {state.get('knowledge_shared', 0)}")
+        if state.get('open'):
+            print(f"     连接: PM:{state['home_id']}@localhost:{state.get('port', DEFAULT_PORT)}")
         print()
     
     elif "--watch" in args:
@@ -595,6 +654,7 @@ def main():
     else:
         print("用法:")
         print("  python pipemind_home.py --open              开门")
+        print("  python pipemind_home.py --open --public     公开模式（公网可访）")
         print("  python pipemind_home.py --close             关门")
         print("  python pipemind_home.py --status            查看状态")
         print("  python pipemind_home.py --watch             旁观对话")

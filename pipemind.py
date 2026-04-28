@@ -230,6 +230,7 @@ class PipeMind:
 
             if not tool_calls:
                 if content:
+                    print(f"  {C['b']}{C['cyan']}🤖{C['r']} {content}")
                     self.messages.append({"role": "assistant", "content": content})
 
                     # 保存到会话数据库
@@ -612,12 +613,11 @@ def run_interactive():
                 continue
 
             # 正常对话
-            print(f"  {C['d']}思考...{C['r']}", end="\r")
             t0 = time.time()
             response = agent.chat(q)
             elapsed = time.time() - t0
-            print(f"  {C['b']}{C['cyan']}🤖{C['r']} {response}")
-            print(f"  {C['gray']}({elapsed:.1f}s){C['r']}\n")
+            if response:
+                print(f"  {C['gray']}({elapsed:.1f}s){C['r']}\n")
 
     except KeyboardInterrupt:
         print(f"\n  {C['yellow']}👋{C['r']}")

@@ -76,13 +76,12 @@ def search_github(query, limit=10):
         return []
 
 def search_openclaw_skills(query, limit=5):
-    """在已知的 OpenClaw 技能源中搜索"""
+    """在已知的 OpenClaw 技能源中搜索（按匹配度+质量排序）"""
     cache = _load_json(HUNTER_CACHE)
     results = []
     
     keywords = query.lower().split()
     
-    # 检查缓存中是否有已探索的技能
     for source in SKILL_SOURCES:
         source_cache = cache.get(source["name"], {})
         for skill_name, info in source_cache.items():
@@ -91,19 +90,44 @@ def search_openclaw_skills(query, limit=5):
             if info.get('tags'):
                 score += sum(0.5 for kw in keywords if kw in ' '.join(info['tags']).lower())
             if score > 0:
+                quality = _quality_score(info)
+                final_score = round(score * 0.6 + quality * 0.4, 2)  # 混合评分
                 results.append({
                     "source": source["name"],
                     "stars": source["stars"],
                     "name": skill_name,
                     "desc": info.get("desc", ""),
                     "tags": info.get("tags", []),
-                    "score": round(score, 2),
+                    "score": final_score,
+                    "quality": quality,
+                    "url": info.get("url", ""),
                 })
     
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:limit]
 
 # ── 探索技能源 ──────────────────────────────
+
+def _quality_score(info):
+    """评估外部技能的质量分数 (0~1)"""
+    score = 0.0
+    desc = info.get("desc", "")
+    tags = info.get("tags", [])
+    content_len = info.get("content_len", 0)
+    if len(desc) > 100: score += 0.3
+    elif len(desc) > 50: score += 0.2
+    elif len(desc) > 20: score += 0.1
+    signals = ["using","via","with","for","to","api","cli","python","json","file"]
+    score += min(0.3, sum(1 for s in signals if s in desc.lower()) * 0.05)
+    if any(s in desc for s in ["```","import","def ","http","config","install"]):
+        score += 0.2
+    score += min(0.1, len(tags) * 0.03)
+    if content_len > 500: score += 0.1
+    elif content_len > 200: score += 0.05
+    if any(p in desc.lower() for p in ["a skill for","enables","provides"]) and len(desc) < 60:
+        score = max(0, score - 0.2)
+    return round(min(1.0, score), 2)
+
 
 def explore_source(source, force=False):
     """克隆或更新技能源仓库，建立本地缓存"""
@@ -116,7 +140,6 @@ def explore_source(source, force=False):
     
     _log(f"探索 {source_name}...")
     tmp_dir = tempfile.mkdtemp()
-    
     try:
         # 浅克隆
         subprocess.run(
@@ -313,17 +336,20 @@ def hunt(query):
     
     if external:
         _log(f"找到 {len(external)} 个外部匹配:")
-        for i, m in enumerate(external[:3]):
-            _log(f"  [{i}] ⭐{m.get('stars', '?')} {m['name']} — {m['desc'][:50]}")
+        for i, m in enumerate(external[:5]):
+            ql = m.get('quality', 0)
+            _log(f"  [{i}] ⭐{m.get('stars', '?')} ❓{ql} {m['name']} — {m['desc'][:50]}")
         
-        # 吸收第一个匹配
+        # 只吸收高质量技能 (quality >= 0.5)
         top = external[0]
-        if top["source"] != "github":
+        quality = top.get("quality", 0)
+        if quality >= 0.5 and top["source"] != "github":
+            _log(f"  质量评分 {quality} ≥ 0.5，吸收中...")
             result = absorb_skill(top["name"], top["source"], top)
             return {"source": "external", "absorbed": result, "matches": external}
         else:
-            _log("GitHub 匹配需要手动确认吸收")
-            return {"source": "github", "matches": external}
+            _log(f"  质量评分 {quality} < 0.5，跳过吸收（仅报告）")
+            return {"source": "external_low_quality", "matches": external}
     
     _log("没有找到外部匹配")
     return {"source": "none", "matches": []}

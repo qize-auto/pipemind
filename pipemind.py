@@ -648,7 +648,30 @@ def main():
     parser.add_argument("query", nargs="*")
     parser.add_argument("--setup", action="store_true", help="首次设置")
     parser.add_argument("--status", action="store_true", help="生命体征")
+    parser.add_argument("--daemon", action="store_true", help="后台守护进程模式")
+    parser.add_argument("--tray", action="store_true", help="系统托盘模式")
+    parser.add_argument("--stop", action="store_true", help="停止守护进程")
+    parser.add_argument("--port", type=int, default=9090, help="Web 控制台端口")
     args = parser.parse_args()
+
+    # ── 守护进程模式 ──
+    if args.daemon:
+        import pipemind_daemon as daemon
+        daemon.run_server(port=args.port)
+        return
+
+    # ── 托盘模式 ──
+    if args.tray:
+        import pipemind_tray as tray
+        tray.run_tray(port=args.port)
+        return
+
+    # ── 停止守护进程 ──
+    if args.stop:
+        import pipemind_daemon as daemon
+        ok, msg = daemon.stop_daemon()
+        print(f"  {'✅' if ok else '⚠'} {msg}")
+        return
 
     if args.setup:
         print(f"\n  {C['b']}首次设置...{C['r']}\n")

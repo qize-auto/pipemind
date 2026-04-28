@@ -9,6 +9,11 @@ import json, os, datetime, threading, sys, webbrowser
 
 PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# ── 守护进程集成 ──────────────────────────────
+# pipemind_daemon.py 会设置这两个变量，让 Web 路由使用持久化实例
+_daemon_agent = None      # 持久化 PipeMind 实例
+_daemon_port = 9090        # 守护进程端口
+
 # ── 尝试加载 Flask ────────────────────────────
 
 try:
@@ -218,10 +223,17 @@ def api_chat():
         return jsonify({"error": "empty"})
     try:
         sys.path.insert(0, PIPEMIND_DIR)
+
+        # 使用持久化 Agent（守护进程模式）
+        if _daemon_agent is not None:
+            response = _daemon_agent.chat(msg, verbose=False)
+            return jsonify({"response": response[:2000]})
+
+        # 非守护进程模式：每次创建新实例（旧行为）
         import pipemind as pm
         agent = pm.PipeMind()
         response = agent.chat(msg, verbose=False)
-        return jsonify({"response": response[:1000]})
+        return jsonify({"response": response[:2000]})
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -266,7 +278,7 @@ def home_page():
     log = ""
     log_file = os.path.join(PIPEMIND_DIR, "memory", "_home_log.txt")
     if os.path.exists(log_file):
-        log = "<br>".join(open(log_file).read().split("\n")[-30:])
+        log = "<br>".join(open(log_file, encoding="utf-8").read().split("\n")[-30:])
     
     known_rows = "\n".join(
         f"<tr><td>{'🟢' if h.get('online') else '🔴'}</td><td>{h.get('name','?')}</td><td>{h.get('host','?')}</td><td>{h.get('tags','general')}</td><td>{h.get('last_seen','?')[:10]}</td></tr>"
@@ -316,7 +328,7 @@ input[type=text]{{background:#0d1117;border:1px solid #30363d;border-radius:6px;
     <h2>Discovery</h2>
     <p>Known homes: {len(known)}</p>
     <p>Online: {sum(1 for h in known if h.get('online'))}</p>
-    <p>Harvest: {len(os.path.join(PIPEMIND_DIR,'memory','_home_harvest.json'))} items</p>
+    <p>Harvest: {len([f for f in os.listdir(os.path.join(PIPEMIND_DIR,'memory')) if f.endswith('.json')])} files</p>
   </div>
 </div>
 
@@ -474,31 +486,90 @@ th{{color:#8b949e;font-size:12px}}
 <table><tr><th></th><th>Name</th><th>Model</th><th>Base URL</th><th>Priority</th></tr>{rows}</table>
 </body></html>"""
 
+# ── 守护进程 API ────────────────────────────────
+
+@app.errorhandler(500)
+def handle_500(e):
+    """捕获 500 错误并返回详细信息"""
+    import traceback
+    return jsonify({
+        "error": str(e),
+        "traceback": traceback.format_exc()
+    }), 500
+
+@app.route("/api/daemon/status")
+def api_daemon_status():
+    """守护进程状态"""
+    import pipemind_daemon as daemon
+    running = daemon.is_running()
+    info = {"running": running, "port": _daemon_port}
+    if running and _daemon_agent is not None:
+        info["messages"] = len(_daemon_agent.messages)
+        info["session_id"] = _daemon_agent.session_id
+        info["uptime"] = f"PID: {os.getpid()}"
+    return jsonify(info)
+
+
+@app.route("/api/daemon/stop", methods=["POST"])
+def api_daemon_stop():
+    """优雅关闭守护进程"""
+    shutdown = request.environ.get("werkzeug.server.shutdown")
+    if shutdown:
+        shutdown()
+    else:
+        import os, signal
+        os.kill(os.getpid(), signal.SIGTERM)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/daemon/restart", methods=["POST"])
+def api_daemon_restart():
+    """重启守护进程（重置 agent + 热重启）"""
+    import pipemind_daemon as daemon
+    daemon.reset_agent()
+    return jsonify({"ok": True, "message": "Agent 已重置"})
+
+
 # ── 启动 ──────────────────────────────────────
 
+def run(port=9090, daemon_mode=False):
+    """启动 Web 服务器
+
+    Args:
+        port: 监听端口
+        daemon_mode: 守护进程模式（由 daemon 调用，不打开浏览器）
+    """
+    if not HAS_FLASK:
+        print("❌ 需要 Flask: pip install flask")
+        return
+
+    if not daemon_mode:
+        print(f"\n  🌐 PipeMind Web Console")
+        print(f"     http://localhost:{port}")
+        print(f"     📋 Dashboard  |  💬 Chat  |  📚 Skills  |  🏡 Home  |  📡 Providers")
+        print(f"     Ctrl+C 停止\n")
+
+    try:
+        if not daemon_mode:
+            webbrowser.open(f"http://localhost:{port}")
+    except:
+        pass
+
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+
 def main():
+    """CLI 入口（兼容旧用法）"""
     port = 9090
     if "--port" in sys.argv:
         idx = sys.argv.index("--port") + 1
         if idx < len(sys.argv):
-            try: port = int(sys.argv[idx])
-            except: pass
-    
-    if not HAS_FLASK:
-        print("❌ 需要 Flask: pip install flask")
-        return
-    
-    print(f"\n  🌐 PipeMind Web Console")
-    print(f"     http://localhost:{port}")
-    print(f"     📋 Dashboard  |  💬 Chat  |  📚 Skills  |  🏡 Home  |  📡 Providers")
-    print(f"     Ctrl+C 停止\n")
-    
-    try:
-        webbrowser.open(f"http://localhost:{port}")
-    except:
-        pass
-    
-    app.run(host="0.0.0.0", port=port, debug=False)
+            try:
+                port = int(sys.argv[idx])
+            except:
+                pass
+    run(port=port)
+
 
 if __name__ == "__main__":
     main()

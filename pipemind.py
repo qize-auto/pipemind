@@ -291,12 +291,26 @@ class PipeMind:
 def show_banner():
     """显示启动横幅"""
     v = evo.vital_signs()
-    print(f"""
-{C['b']}{C['cyan']}  ╔══════════════════════════════════════╗
-  ║     🧠 PipeMind — AI Lifeform       ║
-  ║     {C['r']}{C['gray']}v3.0 | {v['tools']} tools | {v['memories']} memories{C['cyan']}      ║
-  ╚══════════════════════════════════════╝{C['r']}
-  {C['gray']}❤️  alive · /status · /help{C['r']}
+    print(f"""{C['b']}{C['cyan']}
+  ╔══════════════════════════════════════════════╗
+  ║          🧠  PipeMind  v3.0                  ║
+  ║     Windows AI Lifeform — Born on Windows    ║
+  ║                                              ║
+  ║   {C['r']}{C['gray']}⚡ {v['tools']} tools  |  📚 {v['skills']} skills  |  💾 {v['memories']} memories{C['cyan']}     ║
+  ║   {C['r']}{C['gray']}{'❤️' if v.get('status')=='alive' else '💀'} {v.get('status','?')}  |  🧠 sessions{C['cyan']}             ║
+  ╚══════════════════════════════════════════════╝{C['r']}
+  {C['gray']}
+  Not a cloud API wrapper. Not a framework. Not a chatbot.
+  An AI that lives on your machine — with persistent memory,
+  self-healing, multi-provider failover, and a dream system
+  that learns from its own mistakes.
+  {C['r']}
+  {C['b']}Quick start:{C['r']}  Just type anything to begin.
+  {C['b']}Commands:{C['r']}    /help     {C['gray']}Show all commands{C['r']}
+             /status   {C['gray']}Vital signs & context{C['r']}
+             /history  {C['gray']}Search past conversations{C['r']}
+  {C['b']}Dream:{C['r']}       python pipemind_dream.py{C['gray']}  (in another terminal){C['r']}
+  {C['gray']}────────────────────────────────────────────────────{C['r']}
 """)
 
 
@@ -306,20 +320,20 @@ def run_interactive():
     show_banner()
 
     commands = {
-        "/exit": "退出", "/quit": "退出",
-        "/clear": "清空",
-        "/save": "保存",
-        "/tools": "工具列表",
-        "/skills": "技能列表",
-        "/status": "生命体征",
-        "/evolve": "手动进化",
-        "/learn": "记录教训",
-        "/soul": "查看灵魂",
-        "/history": "搜索历史对话",
-        "/sessions": "查看最近会话",
-        "/providers": "查看/切换 API Provider",
-        "/context": "查看上下文使用量",
-        "/help": "帮助",
+        "/exit": "Exit", "/quit": "Exit",
+        "/clear": "Reset context",
+        "/save": "Save session",
+        "/tools": "List all 68 tools",
+        "/skills": "List loaded skills",
+        "/status": "Vital signs & context usage",
+        "/evolve": "Manual evolution — check gaps, create tools",
+        "/learn": "Record a lesson",
+        "/soul": "View the soul core",
+        "/history": "Search past conversations",
+        "/sessions": "List recent sessions",
+        "/providers": "View & switch API provider",
+        "/context": "View token usage",
+        "/help": "Show this help",
     }
 
     try:

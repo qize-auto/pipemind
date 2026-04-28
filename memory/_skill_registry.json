@@ -121,6 +121,20 @@
     ],
     "updated": "2026-04-29T04:38:09.271458"
   },
+  "pipemind-praveenspeaks-cinematic-script-writer": {
+    "name": "pipemind-praveenspeaks-cinematic-script-writer",
+    "desc": "Create professional cinematic scripts for AI video generation with character consistency and cinematography.",
+    "tags": [
+      "coding-agents-and-ides",
+      "cinematic-script-writer"
+    ],
+    "cat": "general",
+    "pitfalls": [
+      "吸收技能可能需要适配 PipeMind 的 API",
+      "此技能是自动吸收的"
+    ],
+    "updated": "2026-04-29T04:57:38.552253"
+  },
   "pipemind-process": {
     "name": "pipemind-process",
     "desc": "PipeMind 进程管理技能 — 进程列表、监控、清理",

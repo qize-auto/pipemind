@@ -15,6 +15,7 @@ PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 REGISTRY_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_registry.json")
 HUNTER_CACHE = os.path.join(PIPEMIND_DIR, "memory", "_hunter_cache.json")
+ABSORBED_LOG = os.path.join(PIPEMIND_DIR, "memory", "_absorbed_skills.json")
 CANDIDATE_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_candidates.json")
 
 # ── 外部技能源 ──────────────────────────────
@@ -298,73 +299,96 @@ tags: {tags_str}
 
 # ── 完整狩猎 ──────────────────────────────
 
+def search_clawhub(query, limit=5):
+    """搜索 ClawHub (clawskills.sh) 上的技能"""
+    try:
+        # ClawSkills 搜索 API
+        url = f"https://clawskills.sh/api/search?q={query.replace(' ', '%20')}&limit={limit}"
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "PipeMind/1.0"})
+        resp = json.loads(urllib.request.urlopen(req, timeout=15).read().decode())
+        results = []
+        for item in resp if isinstance(resp, list) else resp.get("results", []):
+            name = item.get("name", item.get("slug", ""))
+            results.append({
+                "source": "clawhub",
+                "stars": item.get("stars", item.get("popularity", 0)),
+                "name": name,
+                "desc": item.get("description", ""),
+                "url": item.get("url", f"https://clawskills.sh/skills/{name}"),
+                "quality": 0.5,
+                "score": 0.5,
+            })
+        return results
+    except:
+        return []
+
+
 def hunt(query):
-    """完整狩猎流程：搜索外部 → 匹配 → 吸收"""
+    """完整狩猎：本地 → OpenClaw → GitHub → ClawHub → 自创"""
     _log(f"开始狩猎: '{query}'")
     
-    # 1. 先检查本地注册表
+    # 1. 本地注册表
     registry = _load_json(REGISTRY_FILE, {})
-    local_matches = []
     q = query.lower()
     for name, info in registry.items():
         if q in name.lower() or q in info.get("desc", "").lower():
-            local_matches.append((1.0, name, info))
+            _log(f"✓ 本地已有: {name}")
+            return {"source": "local", "name": name}
     
-    if local_matches:
-        _log(f"本地已有匹配: {local_matches[0][1]}")
-        return {"source": "local", "matches": local_matches}
-    
-    # 2. 确保外部技能源已探索
+    # 2. OpenClaw 缓存
     explore_all_sources()
-    
-    # 3. 在外部源中搜索
     external = search_openclaw_skills(query)
+    for m in external:
+        if m.get("quality", 0) >= 0.5:
+            _log(f"✓ OpenClaw 高质量: {m['name']} (❓{m['quality']})")
+            result = absorb_skill(m["name"], m["source"], m)
+            return {"source": "openclaw", "absorbed": result, "match": m}
     
-    if not external:
-        # 4. 用 GitHub 搜索
-        _log("外部源无匹配，搜索 GitHub...")
-        github_results = search_github(f"openclaw skill {query}")
-        if github_results:
-            for r in github_results:
-                external.append({
-                    "source": "github",
-                    "stars": r.get("stargazersCount", 0),
-                    "name": r["name"],
-                    "desc": r.get("description", ""),
-                    "score": 0.5,
-                })
+    # 存候选（低质量 OpenClaw）
+    _save_candidates(external, query)
     
-    if external:
-        _log(f"找到 {len(external)} 个外部匹配:")
-        for i, m in enumerate(external[:5]):
-            ql = m.get('quality', 0)
-            _log(f"  [{i}] ⭐{m.get('stars', '?')} ❓{ql} {m['name']} — {m['desc'][:50]}")
-        
-        # 只吸收高质量技能 (quality >= 0.5)
-        top = external[0]
-        quality = top.get("quality", 0)
-        if quality >= 0.5 and top["source"] != "github":
-            _log(f"  质量评分 {quality} ≥ 0.5，吸收中...")
-            result = absorb_skill(top["name"], top["source"], top)
-            return {"source": "external", "absorbed": result, "matches": external}
-        else:
-            _log(f"  质量评分 {quality} < 0.5，存入候选名单")
-            # 存入候选名单，不丢
-            candidates = _load_json(CANDIDATE_FILE, {"candidates": []})
-            # 去重
-            existing = {c["name"] for c in candidates["candidates"]}
-            for m in external[:5]:
-                if m["name"] not in existing:
-                    m["hunted_at"] = datetime.datetime.now().isoformat()
-                    m["hunt_query"] = query
-                    candidates["candidates"].append(m)
-            candidates["candidates"] = candidates["candidates"][-50:]  # 最多保留 50 条
-            _save_json(CANDIDATE_FILE, candidates)
-            _log(f"  候选名单现有 {len(candidates['candidates'])} 条待审技能")
-            return {"source": "candidates", "matches": external}
+    # 3. GitHub
+    _log("搜索 GitHub...")
+    github_results = search_github(query)
+    for r in github_results[:3]:
+        _log(f"  GitHub: ⭐{r.get('stargazersCount',0)} {r['name']}")
+    if github_results:
+        return {"source": "github", "matches": github_results[:3]}
     
-    _log("没有找到外部匹配")
-    return {"source": "none", "matches": []}
+    # 4. ClawHub 在线搜索
+    _log("搜索 ClawHub...")
+    claw_results = search_clawhub(query)
+    for r in claw_results[:3]:
+        _log(f"  ClawHub: {r['name']}")
+    if claw_results:
+        return {"source": "clawhub", "matches": claw_results[:3]}
+    
+    # 5. 都找不到 → 自创
+    _log("所有外部源无匹配，LLM 自创技能")
+    try:
+        import pipemind_skillforge as forge
+        result = forge.create_skill(query)
+        if "error" not in result:
+            return {"source": "created", "skill": result}
+    except:
+        pass
+    
+    return {"source": "none"}
+
+
+def _save_candidates(matches, query):
+    """保存低质量匹配到候选名单"""
+    candidates = _load_json(CANDIDATE_FILE, {"candidates": []})
+    existing = {c["name"] for c in candidates["candidates"]}
+    for m in matches[:5]:
+        if m["name"] not in existing:
+            m["hunted_at"] = datetime.datetime.now().isoformat()
+            m["hunt_query"] = query
+            candidates["candidates"].append(m)
+    candidates["candidates"] = candidates["candidates"][-50:]
+    _save_json(CANDIDATE_FILE, candidates)
+    _log(f"  候选名单现有 {len(candidates['candidates'])} 条待审")
 
 # ── 升级已吸收的技能 ──────────────────────
 
@@ -441,8 +465,14 @@ def main():
             if result.get("absorbed"):
                 a = result["absorbed"]
                 print(f"  ✅ 已吸收: {a.get('local_name', '?')}")
-            if result.get("matches"):
+            elif result.get("skill"):
+                print(f"  ✅ 自创: {result['skill'].get('skill_name', '?')}")
+            elif result.get("matches"):
                 print(f"  候选: {len(result['matches'])} 条")
+                for m in result["matches"]:
+                    print(f"    ⭐{m.get('stars','?')} {m['name']}")
+            elif result.get("name"):
+                print(f"  本地已有: {result['name']}")
     
     elif "--candidates" in args:
         candidates = _load_json(CANDIDATE_FILE, {"candidates": []})

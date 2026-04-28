@@ -1,0 +1,194 @@
+{
+  "pipemind-backup": {
+    "name": "pipemind-backup",
+    "desc": "PipeMind 备份恢复技能 — 快照备份 + 自愈 + 状态监控",
+    "tags": [
+      "backup"
+    ],
+    "cat": "security",
+    "pitfalls": [
+      "基线不存在时 --heal 无效",
+      "被篡改的文件没有备份也能恢复",
+      "快照太多占用空间"
+    ],
+    "updated": "2026-04-29T03:40:37.332627"
+  },
+  "pipemind-coding": {
+    "name": "pipemind-coding",
+    "desc": "PipeMind 编码规范技能 — Windows 原生 Python 开发注意事项",
+    "tags": [
+      "coding"
+    ],
+    "cat": "dev",
+    "pitfalls": [
+      "urllib 超时默认无限制",
+      "Windows 挂起后文件锁不释放",
+      "sys.path.insert 优先级最高"
+    ],
+    "updated": "2026-04-29T03:40:51.727945"
+  },
+  "pipemind-creative": {
+    "name": "pipemind-creative",
+    "desc": "PipeMind 创造思维技能 — 发散思维、创意方案、类比推理",
+    "tags": [
+      "creative"
+    ],
+    "cat": "general",
+    "pitfalls": [
+      "创造方案需要验证可行性",
+      "分解后的子任务应能独立执行",
+      "发明记录积累太多影响性能"
+    ],
+    "updated": "2026-04-29T03:55:08.026740"
+  },
+  "pipemind-dream-guide": {
+    "name": "pipemind-dream-guide",
+    "desc": "PipeMind 梦境系统指南 — 历史反思 + nudge 提醒",
+    "tags": [
+      "dream-guide"
+    ],
+    "cat": "intelligence",
+    "pitfalls": [
+      "没有记忆数据时做梦是空的",
+      "nudge 到期自动消失",
+      "梦境不修改系统提示"
+    ],
+    "updated": "2026-04-29T03:54:54.221280"
+  },
+  "pipemind-evolution": {
+    "name": "pipemind-evolution",
+    "desc": "PipeMind 进化引擎技能 — 自我进化、工具创造、模式吸收",
+    "tags": [
+      "evolution"
+    ],
+    "cat": "meta",
+    "pitfalls": [
+      "自动创建的工具需要重启后生效",
+      "进化任务太多会导致系统提示膨胀",
+      "教训记录越具体越好"
+    ],
+    "updated": "2026-04-29T03:54:36.080370"
+  },
+  "pipemind-helper": {
+    "name": "pipemind-helper",
+    "desc": "PipeMind 使用助手 — 提供 /guides 和 /tips 命令",
+    "tags": [
+      "helper"
+    ],
+    "cat": "general",
+    "pitfalls": [],
+    "updated": "2026-04-29T00:25:10.215478"
+  },
+  "pipemind-memory-guide": {
+    "name": "pipemind-memory-guide",
+    "desc": "PipeMind 记忆系统指南 — 存储、检索、管理",
+    "tags": [
+      "memory-guide"
+    ],
+    "cat": "intelligence",
+    "pitfalls": [
+      "记忆 key 重复会覆盖",
+      "搜索是关键词匹配不是语义",
+      "备份文件不通过 save_memory 管理"
+    ],
+    "updated": "2026-04-29T03:54:54.200330"
+  },
+  "pipemind-network": {
+    "name": "pipemind-network",
+    "desc": "PipeMind 网络技能 — 连通性诊断、API 测试",
+    "tags": [
+      "network"
+    ],
+    "cat": "network",
+    "pitfalls": [
+      "urllib 默认不验证 SSL",
+      "Windows 防火墙可能拦截 ICMP",
+      "中国网络环境需要镜像源"
+    ],
+    "updated": "2026-04-29T03:54:36.081923"
+  },
+  "pipemind-novel-craft": {
+    "name": "pipemind-novel-craft",
+    "desc": "Auto-generated skill for: write a novel with AI, characters, plot, chapters",
+    "tags": [
+      "novel-craft"
+    ],
+    "cat": "general",
+    "pitfalls": [
+      "pipemind-novel-craft",
+      "世界观与冲突",
+      "角色设计"
+    ],
+    "updated": "2026-04-29T04:38:09.271458"
+  },
+  "pipemind-process": {
+    "name": "pipemind-process",
+    "desc": "PipeMind 进程管理技能 — 进程列表、监控、清理",
+    "tags": [
+      "process"
+    ],
+    "cat": "system",
+    "pitfalls": [
+      "taskkill /f 数据可能丢失",
+      "系统进程不能被终止",
+      "Windows 进程名不区分大小写"
+    ],
+    "updated": "2026-04-29T03:54:36.133478"
+  },
+  "pipemind-security-guide": {
+    "name": "pipemind-security-guide",
+    "desc": "PipeMind 安全技能 — 文件完整性、基线、权限",
+    "tags": [
+      "security-guide"
+    ],
+    "cat": "security",
+    "pitfalls": [
+      "基线不存在时 --heal 无效",
+      "自愈只修被篡改的文件",
+      "安全审计日志不自动清理"
+    ],
+    "updated": "2026-04-29T03:54:54.173494"
+  },
+  "pipemind-self-test": {
+    "name": "pipemind-self-test",
+    "desc": "PipeMind 自检技能 — 健康检查 + 代谢分析 + 精度报告",
+    "tags": [
+      "self-test"
+    ],
+    "cat": "meta",
+    "pitfalls": [
+      "自检发现异常后不修复等于白检",
+      "代谢清理可能误删有用缓存",
+      "精度报告需要真实数据才有意义"
+    ],
+    "updated": "2026-04-29T03:40:25.270951"
+  },
+  "pipemind-system": {
+    "name": "pipemind-system",
+    "desc": "PipeMind 系统管理技能 — Windows 系统信息、服务、启动项",
+    "tags": [
+      "system"
+    ],
+    "cat": "system",
+    "pitfalls": [
+      "修改服务前先查依赖",
+      "开机启动项修改需要管理员权限",
+      "系统信息中的内存值是物理内存"
+    ],
+    "updated": "2026-04-29T03:54:19.391164"
+  },
+  "pipemind-windows-deep": {
+    "name": "pipemind-windows-deep",
+    "desc": "PipeMind Windows 深度集成技能 — 注册表、服务、计划任务",
+    "tags": [
+      "windows-deep"
+    ],
+    "cat": "system",
+    "pitfalls": [
+      "注册表写错系统可能崩",
+      "服务名不是显示名",
+      "启动项修改需管理员权限"
+    ],
+    "updated": "2026-04-29T03:55:08.111341"
+  }
+}

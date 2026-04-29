@@ -208,6 +208,16 @@ def _register_and_start_subsystems():
             log.warn(f"弈辛监控不可用: {e}")
     subsystems.append(("yixin_guardian", _start_yixin, None, []))
 
+    # 免疫系统（线程，5分钟间隔）
+    def _start_immune():
+        try:
+            import pipemind_immune as imm
+            imm.get_immune().start()
+            log.info("免疫系统已启动")
+        except Exception as e:
+            log.warn(f"免疫系统不可用: {e}")
+    subsystems.append(("immune_system", _start_immune, None, []))
+
     # 决策引擎（线程，30分钟间隔）
     def _start_decision():
         try:

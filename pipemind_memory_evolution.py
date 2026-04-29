@@ -13,10 +13,9 @@
   _knowledge_archive/     — 已归档的旧知识
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, re, time, hashlib, random, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 
 KNOWLEDGE_FILE = os.path.join(MEM_DIR, "_knowledge.json")
 SUMMARY_FILE = os.path.join(MEM_DIR, "_daily_summary.json")

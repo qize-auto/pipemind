@@ -10,10 +10,9 @@
   _learned_patterns.json — 学到的工具模式
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, re, sys, subprocess, glob, time
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 
 LEARN_LOG_FILE = os.path.join(MEM_DIR, "_daily_learn_log.json")

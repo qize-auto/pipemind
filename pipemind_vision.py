@@ -1,7 +1,7 @@
 """PipeMind — 视觉能力：截图 + 图像分析 + OCR"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, subprocess, base64, json, datetime, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SCREENSHOT_DIR = os.path.join(PIPEMIND_DIR, "output")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 

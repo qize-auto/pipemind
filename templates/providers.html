@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Providers</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
+h1{color:#f0f6fc;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}
+th{color:#8b949e;font-size:12px}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Providers</h1>
+<div class="card" id="providerList">Loading...</div>
+
+<script>
+fetch('/api/providers').then(r=>r.json()).then(data => {
+  const providers = data.providers || data;
+  document.getElementById('providerList').innerHTML =
+    '<table><tr><th></th><th>Name</th><th>Model</th><th>Base URL</th><th>Priority</th></tr>' +
+    providers.map(p => '<tr><td>' + (p.api_key ? 'Online' : 'Offline') + '</td><td>' + (p.name||'?') + '</td><td>' + (p.model||'?') + '</td><td>' + ((p.base_url||'').slice(0,40)||'?') + '</td><td>' + (p.priority||'?') + '</td></tr>').join('') +
+    '</table>';
+});
+</script>
+</body>
+</html>

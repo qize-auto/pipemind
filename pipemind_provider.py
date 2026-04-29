@@ -8,9 +8,9 @@
   python pipemind_provider.py --test     # 测试连通性
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, time, urllib.request, urllib.error, socket
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(PIPEMIND_DIR, "config.json")
 
 # ── 默认 Provider 列表 ──────────────────────────

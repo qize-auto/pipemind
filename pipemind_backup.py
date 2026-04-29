@@ -9,9 +9,9 @@
   python pipemind_backup.py --status  # 查看备份状态
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, hashlib, datetime, glob, shutil, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 BASELINE_FILE = os.path.join(PIPEMIND_DIR, "memory", ".baseline.json")
 BACKUP_DIR = os.path.join(PIPEMIND_DIR, "memory", "_backups")
 

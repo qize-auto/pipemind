@@ -4,10 +4,9 @@
 每周生成：叙事性成长报告，用 LLM 写成故事。
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, sys, glob
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 CHRONICLE_FILE = os.path.join(MEM_DIR, "_chronicle.json")
 MILESTONES_FILE = os.path.join(MEM_DIR, "_milestones.json")
 

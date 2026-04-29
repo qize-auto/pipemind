@@ -1,7 +1,7 @@
 """PipeMind — 网络监控 + 后台任务调度"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, datetime, urllib.request, re, time, threading, queue
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 MONITOR_FILE = os.path.join(PIPEMIND_DIR, "memory", "_monitors.json")
 TASK_FILE = os.path.join(PIPEMIND_DIR, "memory", "_tasks.json")
 

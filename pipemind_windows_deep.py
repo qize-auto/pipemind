@@ -1,9 +1,9 @@
 """PipeMind — Windows 深度适配层
 注册表 / 服务 / 事件日志 / 计划任务 / 回收站 / UAC / 代理 / 自启动
 """
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, subprocess, json, datetime, ctypes, sys, tempfile, glob, re
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Windows-only 模块
 try:

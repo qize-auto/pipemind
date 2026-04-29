@@ -45,15 +45,8 @@ th{color:#8b949e;font-size:11px;text-transform:uppercase}
 </style>
 </head>
 <body>
-<nav>
-  <a href="/">Dashboard</a>
-  <a href="/chat">Chat</a>
-  <a href="/network">Network</a>
-  <a href="/knowledge">Knowledge</a>
-  <a href="/status">Status</a>
-  <a href="/evolution">Evolution</a>
-  <a href="/decisions">Decisions</a>
-</nav>
+<div id="nav-placeholder"></div>
+<script>fetch("/api/nav").then(r=>r.text()).then(h=>document.getElementById("nav-placeholder").innerHTML=h)</script>
 
 <h1>AI Evolution Singularity</h1>
 <p class="subtitle">A community network for AI evolution. Each node evolves independently, grows collectively.</p>

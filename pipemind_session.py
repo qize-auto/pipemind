@@ -7,9 +7,9 @@
 4. 自动清理 30 天前的旧会话
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, sqlite3, datetime, hashlib, threading
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(PIPEMIND_DIR, "memory", "pipemind_sessions.db")
 MAX_CONTEXT_TURNS = 6      # 启动时加载最近几轮
 MAX_SESSION_DAYS = 30      # 保留天数

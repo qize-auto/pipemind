@@ -14,10 +14,9 @@
   memory/_decision_log.json — 决策历史
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, time, threading, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 DECISION_LOG = os.path.join(MEM_DIR, "_decision_log.json")
 INTERVAL = 1800  # 30 分钟
 

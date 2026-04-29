@@ -1,7 +1,7 @@
 """PipeMind — 自检系统 + 工具创建器"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, sys, subprocess, json, datetime, textwrap, importlib, traceback
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 TOOLS_FILE = os.path.join(PIPEMIND_DIR, "pipemind_tools.py")
 TEST_LOG = os.path.join(PIPEMIND_DIR, "memory", "_test_log.json")
 

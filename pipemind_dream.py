@@ -8,9 +8,9 @@
   python pipemind_dream.py --forget # 清除过期 nudge
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, glob, datetime, hashlib, random
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 DREAM_DIR = os.path.join(PIPEMIND_DIR, "memory", ".dreams")
 NUDGE_FILE = os.path.join(PIPEMIND_DIR, "pipemind_nudge.json")
 MEMORY_DIR = os.path.join(PIPEMIND_DIR, "memory")

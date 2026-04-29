@@ -6,9 +6,9 @@
 3. 保留系统提示 + 最近 N 轮完整对话
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, datetime
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Token 估算：中英文混合按 1 字 ≈ 2 token
 ESTIMATE_RATIO = 2.0

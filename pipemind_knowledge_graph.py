@@ -8,10 +8,9 @@ API:
   /api/knowledge/types  → 按类型统计
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 KNOWLEDGE_FILE = os.path.join(MEM_DIR, "_knowledge.json")
 LINKS_FILE = os.path.join(MEM_DIR, "_knowledge_links.json")
 

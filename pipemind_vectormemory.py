@@ -5,9 +5,9 @@
   python pipemind_vectormemory.py --search <q>  # 语义搜索
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, sys, glob, pickle, threading, time
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 MEMORY_DIR = os.path.join(PIPEMIND_DIR, "memory")
 INDEX_FILE = os.path.join(MEMORY_DIR, "_vector_index.pkl")
 

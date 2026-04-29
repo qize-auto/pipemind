@@ -2,9 +2,9 @@
 赋予 PipeMind 与 Hermes 同级的思考能力：
 动态技能注入 + 上下文感知 + 多步推理 + 自主规划 + 元认知
 """
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, glob, re, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ── 上下文管理器（Hermes 同级） ──
 

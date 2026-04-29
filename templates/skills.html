@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Skills</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
+h1{color:#f0f6fc;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}
+th{color:#8b949e;font-size:12px}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Skills</h1>
+<div class="card" id="skillList">Loading...</div>
+
+<script>
+fetch('/api/skills').then(r=>r.json()).then(skills => {
+  document.getElementById('skillList').innerHTML =
+    '<table><tr><th>Name</th><th>Description</th><th>Commands</th></tr>' +
+    skills.map(s => '<tr><td>' + s.name + '</td><td>' + (s.desc||'').slice(0,60) + '</td><td>' + (s.commands||[]).length + '</td></tr>').join('') +
+    '</table>';
+});
+</script>
+</body>
+</html>

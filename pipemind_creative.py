@@ -1,8 +1,8 @@
 """PipeMind — 创造思维引擎：从无到有，自研自造，吸收融合
 没有的东西自己创造，解决不了自己想办法，解决后深度融合武装自己"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, hashlib, sys, glob, re, importlib, traceback
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 TOOLS_FILE = os.path.join(PIPEMIND_DIR, "pipemind_tools.py")
 INVENTIONS_FILE = os.path.join(PIPEMIND_DIR, "memory", "_inventions.json")
 ABSORPTION_FILE = os.path.join(PIPEMIND_DIR, "memory", "_absorbed.json")

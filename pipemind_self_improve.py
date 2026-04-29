@@ -14,10 +14,9 @@
   - 应用前自动备份，应用后检查语法
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, sys, glob, re, textwrap, subprocess, shutil, py_compile
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 LOG_FILE = os.path.join(MEM_DIR, "_improvement_log.json")
 PENDING_FILE = os.path.join(MEM_DIR, "_pending_improvements.json")
 BACKUP_DIR = os.path.join(MEM_DIR, "_improve_backups")

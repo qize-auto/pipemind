@@ -9,9 +9,9 @@
   python pipemind_hunter.py --upgrade             # 检查已吸收技能的更新
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, re, datetime, subprocess, sys, glob, hashlib, tempfile, shutil
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 REGISTRY_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_registry.json")
 HUNTER_CACHE = os.path.join(PIPEMIND_DIR, "memory", "_hunter_cache.json")

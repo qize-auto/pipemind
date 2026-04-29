@@ -1,8 +1,7 @@
 """PipeMind — 语义记忆：升级版记忆系统（关键词 + 模糊搜索 + 自动关联）"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, re, glob
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 INDEX_FILE = os.path.join(MEM_DIR, "_index.json")
 
 

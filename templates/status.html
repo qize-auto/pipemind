@@ -24,13 +24,8 @@ th{color:#8b949e;font-size:11px}
 </style>
 </head>
 <body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/status">Status</a>
-  <a href="/chronicle">Chronicle</a>
-  <a href="/immune">Immune</a>
-  <a href="/network">Network</a>
-</nav>
+<div id="nav-placeholder"></div>
+<script>fetch("/api/nav").then(r=>r.text()).then(h=>document.getElementById("nav-placeholder").innerHTML=h)</script>
 
 <h1>System Status</h1>
 <div class="stat-row" id="statsRow"></div>

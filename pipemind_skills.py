@@ -1,8 +1,8 @@
 """PipeMind 技能热加载 — 不重启就能加载新技能"""
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, glob, re, json, threading, time, hashlib
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 
 _loaded_skills = []

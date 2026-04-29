@@ -31,13 +31,8 @@ h1{color:#f0f6fc;margin-bottom:8px}
 </style>
 </head>
 <body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/immune">Immune</a>
-  <a href="/chronicle">Chronicle</a>
-  <a href="/self-improve">Improve</a>
-  <a href="/status">Status</a>
-</nav>
+<div id="nav-placeholder"></div>
+<script>fetch("/api/nav").then(r=>r.text()).then(h=>document.getElementById("nav-placeholder").innerHTML=h)</script>
 
 <h1>Immune System</h1>
 <p class="subtitle">Self-monitoring and self-healing for all PipeMind modules.</p>

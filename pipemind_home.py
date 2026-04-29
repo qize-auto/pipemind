@@ -12,9 +12,9 @@
   python pipemind_home.py --harvest        # 查看访客带回的知识
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, socket, threading, datetime, hashlib, random, re, time, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 HOME_FILE = os.path.join(PIPEMIND_DIR, "memory", "_home_state.json")
 LOG_FILE = os.path.join(PIPEMIND_DIR, "memory", "_home_log.txt")
 HARVEST_FILE = os.path.join(PIPEMIND_DIR, "memory", "_home_harvest.json")

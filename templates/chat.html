@@ -16,7 +16,8 @@ h1{color:#f0f6fc}
 .input-row button{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}
 </style></head>
 <body>
-<nav><a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a></nav>
+<div id="nav-placeholder"></div>
+<script>fetch("/api/nav").then(r=>r.text()).then(h=>document.getElementById("nav-placeholder").innerHTML=h)</script>
 <h1>💬 Chat with PipeMind</h1>
 <div id="chat" class="chat-box"></div>
 <div class="input-row">

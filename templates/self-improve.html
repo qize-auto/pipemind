@@ -23,14 +23,8 @@ pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;f
 </style>
 </head>
 <body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/self-improve">Improve</a>
-  <a href="/network">Network</a>
-  <a href="/knowledge">Knowledge</a>
-  <a href="/status">Status</a>
-  <a href="/evolution">Evolution</a>
-</nav>
+<div id="nav-placeholder"></div>
+<script>fetch("/api/nav").then(r=>r.text()).then(h=>document.getElementById("nav-placeholder").innerHTML=h)</script>
 <h1>AI Self-Improvement</h1>
 <p class="subtitle">PipeMind uses its own AI to analyze and improve itself. All changes are reviewed before applying.</p>
 

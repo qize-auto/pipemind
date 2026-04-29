@@ -14,6 +14,15 @@ PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 _daemon_agent = None      # 持久化 PipeMind 实例
 _daemon_port = 9090        # 守护进程端口
 
+@app.route("/api/nav")
+def api_nav():
+    """返回导航组件 HTML"""
+    nav_path = os.path.join(PIPEMIND_DIR, "templates", "nav.html")
+    if os.path.exists(nav_path):
+        with open(nav_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
+
 # ── 尝试加载 Flask ────────────────────────────
 
 try:
@@ -291,25 +300,17 @@ def api_chat():
 
 @app.route("/skills")
 def skills_page():
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "skills.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
+
+
+@app.route("/api/skills")
+def api_skills():
     import pipemind_skills as pmsk
-    skills = pmsk.list_skills()
-    rows = "\n".join(f"<tr><td>{s['name']}</td><td>{s.get('desc','')[:60]}</td><td>{len(s.get('commands',[]))}</td></tr>" 
-                     for s in skills)
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Skills</title>
-<style>body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px}}
-h1{{color:#f0f6fc}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:10px;border-bottom:1px solid #30363d}}
-th{{color:#8b949e;font-size:12px;text-transform:uppercase}}
-td{{font-size:14px}}
-</style></head><body>
-<nav><a href="/">🏠 Dashboard</a><a href="/skills">📚 Skills</a></nav>
-<h1>📚 Skills ({len(skills)})</h1>
-</body></html>"""
-# ── 进化奇点网络 API ─────────────────────────
+    return jsonify(pmsk.list_skills())
 
 @app.route("/network")
 def network_page():
@@ -663,31 +664,24 @@ def api_home_add():
 
 @app.route("/providers")
 def providers_page():
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "providers.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
+
+
+@app.route("/api/providers")
+def api_providers():
     cfg_file = os.path.join(PIPEMIND_DIR, "config.json")
     providers = []
     if os.path.exists(cfg_file):
         try:
-            cfg = json.load(open(cfg_file))
+            cfg = json.load(open(cfg_file, encoding="utf-8"))
             providers = cfg.get("providers", [])
-        except Exception: pass
-    rows = "\n".join(
-        f"<tr><td>{'🟢' if p.get('api_key') else '🔴'}</td><td>{p.get('name','?')}</td><td>{p.get('model','?')}</td><td>{p.get('base_url','?')[:40]}</td><td>{p.get('priority','?')}</td></tr>"
-        for p in providers
-    )
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Providers</title>
-<style>body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px}}
-h1{{color:#f0f6fc}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:10px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-</style></head><body>
-<nav><a href="/">🏠 Dashboard</a><a href="/providers">📡 Providers</a></nav>
-<h1>📡 Providers ({len(providers)})</h1>
-<table><tr><th></th><th>Name</th><th>Model</th><th>Base URL</th><th>Priority</th></tr>{rows}</table>
-</body></html>"""
+        except Exception:
+            pass
+    return jsonify({"providers": providers})
 
 # ── 守护进程 API ────────────────────────────────
 

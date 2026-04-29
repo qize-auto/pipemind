@@ -1,8 +1,8 @@
 """PipeMind — 代谢系统：自我优化、防臃肿、保速度
 进化不是堆功能，是增肌减脂。能力变强，身体更轻。"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, glob, sys, time, shutil
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 PERF_LOG = os.path.join(PIPEMIND_DIR, "memory", "_perf_log.json")
 USAGE_LOG = os.path.join(PIPEMIND_DIR, "memory", "_tool_usage.json")
 PROMPT_LOG = os.path.join(PIPEMIND_DIR, "memory", "_prompt_size.json")

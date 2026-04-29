@@ -1,0 +1,18 @@
+<nav id="mainNav">
+  <a href="/">Dashboard</a>
+  <a href="/chat">Chat</a>
+  <a href="/knowledge">Knowledge</a>
+  <a href="/chronicle">Chronicle</a>
+  <a href="/immune">Immune</a>
+  <a href="/self-improve">Improve</a>
+  <a href="/network">Network</a>
+  <a href="/status">Status</a>
+  <a href="/evolution">Evolution</a>
+  <a href="/decisions">Decisions</a>
+</nav>
+<script>
+// Mark active nav item
+document.querySelectorAll('#mainNav a').forEach(a => {
+  if (a.pathname === window.location.pathname) a.style.borderBottom = '2px solid #58a6ff';
+});
+</script>

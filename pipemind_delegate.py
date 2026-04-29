@@ -5,9 +5,9 @@
   python pipemind_delegate.py --list               # 查看任务状态
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, subprocess, sys, datetime, threading, time, hashlib
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 TASKS_FILE = os.path.join(PIPEMIND_DIR, "memory", "_tasks.json")
 MAX_WORKERS = 3
 

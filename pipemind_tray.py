@@ -11,10 +11,10 @@
   - 气泡通知
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, sys, time, json, subprocess, threading
 import urllib.request, urllib.error
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 DAEMON_PORT = 9090
 
 # ── 尝试加载 pystray ──────────────────────────

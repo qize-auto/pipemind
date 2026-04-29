@@ -1,9 +1,9 @@
 """PipeMind — 精准执行引擎：一次做对，不重复错误
 目标导向思维 + 模式识别 + 防错预判 + 验证闭环
 """
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, hashlib
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 PATTERNS_FILE = os.path.join(PIPEMIND_DIR, "memory", "_patterns.json")
 SOLUTIONS_FILE = os.path.join(PIPEMIND_DIR, "memory", "_solutions.json")
 

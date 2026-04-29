@@ -1,7 +1,7 @@
 """PipeMind — 安全韧性层：加密存储 + 审计日志 + 崩溃恢复 + 热重载"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, base64, hashlib, hmac, sys, glob, shutil, traceback
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 AUDIT_LOG = os.path.join(PIPEMIND_DIR, "memory", "_audit.json")
 CRASH_LOG = os.path.join(PIPEMIND_DIR, "memory", "_crashes.json")
 BACKUP_DIR = os.path.join(PIPEMIND_DIR, "memory", "_backups")

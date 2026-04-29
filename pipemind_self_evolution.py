@@ -12,10 +12,9 @@
   _tuning_state.json  — 当前调优参数 {temperature, max_tokens, ...}
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, time, statistics, sys
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 
 PERF_FILE = os.path.join(MEM_DIR, "_perf_history.json")
 AUTO_LESSONS_FILE = os.path.join(MEM_DIR, "_auto_lessons.json")

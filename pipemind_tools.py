@@ -1,4 +1,5 @@
 """PipeMind — 进化版工具系统（Windows 原生）"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, subprocess, json, datetime, glob, sys, re, platform, time
 
 _PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -210,7 +211,6 @@ def _get_env_var(name: str) -> str:
 #  记忆工具
 # ═══════════════════════════════════════
 
-MEM_DIR = os.path.join(_PIPEMIND_DIR, "memory")
 os.makedirs(MEM_DIR, exist_ok=True)
 
 def _save_memory(key: str, content: str) -> str:

@@ -12,9 +12,9 @@
   python pipemind_skillforge.py --delegate <任务>  # 分派给技能子代理
 """
 
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, re, datetime, hashlib, sys, glob
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 SKILLS_DIR = os.path.join(PIPEMIND_DIR, "skills")
 REGISTRY_FILE = os.path.join(PIPEMIND_DIR, "memory", "_skill_registry.json")
 

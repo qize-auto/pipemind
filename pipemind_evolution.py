@@ -1,9 +1,9 @@
 """PipeMind — 自我进化引擎
 PipeMind 的"生命力"核心：反思、学习、扩展、进化、代谢
 """
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, glob, re, sys, subprocess, textwrap
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 TOOLS_FILE = os.path.join(PIPEMIND_DIR, "pipemind_tools.py")
 EVOLUTION_LOG = os.path.join(PIPEMIND_DIR, "memory", "_evolution_log.json")
 LESSONS_FILE = os.path.join(PIPEMIND_DIR, "memory", "_lessons.json")

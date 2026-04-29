@@ -1,7 +1,7 @@
 """PipeMind — 语音交互：听 + 说（Windows 原生）"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, subprocess, datetime, tempfile
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 _has_speech = False
 try:

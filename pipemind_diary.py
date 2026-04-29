@@ -1,7 +1,7 @@
 """PipeMind — 日记系统：人格积累 + 情绪 + 成长轨迹"""
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import json, os, datetime
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 DIARY_FILE = os.path.join(PIPEMIND_DIR, "memory", "_diary.json")
 MOOD_FILE = os.path.join(PIPEMIND_DIR, "memory", "_mood.json")
 

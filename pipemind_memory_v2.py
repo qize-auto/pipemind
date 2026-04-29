@@ -8,10 +8,9 @@
 4. MCP 搜索 — 自动感知用户查询历史的需求
 5. 隐私标签 — <private> 标签控制内容存储
 """
+from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, json, datetime, glob, re, threading, queue, hashlib
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
 
 # ── 生命周期钩子系统 ──
 

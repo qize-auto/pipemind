@@ -6,7 +6,7 @@
   pipemind.py --stop    →  停止守护进程
 """
 
-import os, sys, json, time, signal, threading, atexit, subprocess, datetime
+import os, sys, json, time, signal, threading, atexit, subprocess, datetime, urllib.request, urllib.error
 
 PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 MEMORY_DIR = os.path.join(PIPEMIND_DIR, "memory")
@@ -166,6 +166,7 @@ def run_server(port=9090):
     print(f"     🧠 记忆进化: 每日凌晨聚合")
     print(f"     🌉 弈辛守护: 每5分钟健康检查")
     print(f"     🧬 本体进化: 每日凌晨自调优")
+    print(f"     📚 每日学习: 从弈辛/工具/GitHub吸收")
     print(f"     Ctrl+C 停止\n")
 
     # ── 启动记忆进化定时器 ──
@@ -190,15 +191,17 @@ def run_server(port=9090):
 def _start_consolidation_timer():
     """启动每日聚合定时器（后台线程，每小时检查一次）"""
     def _timer_loop():
-        last_date = None
+        last_consolidate = None
+        last_report = None
+        last_learn = None
         while _running:
             try:
                 now = datetime.datetime.now()
                 today = now.strftime("%Y-%m-%d")
 
-                # 凌晨 3:00-3:05 之间执行，每天一次
-                if now.hour == 3 and 0 <= now.minute < 5 and last_date != today:
-                    last_date = today
+                # 凌晨 3:00-3:05 记忆聚合
+                if now.hour == 3 and 0 <= now.minute < 5 and last_consolidate != today:
+                    last_consolidate = today
                     try:
                         import pipemind_memory_evolution as evo
                         print(f"  🧠 开始每日记忆聚合 ({today})...")
@@ -208,8 +211,9 @@ def _start_consolidation_timer():
                     except Exception as e:
                         print(f"  ⚠ 聚合失败: {e}")
 
-                # 凌晨 4:00 生成进化日报 + 自调优
-                if now.hour == 4 and 0 <= now.minute < 5 and last_date != today:
+                # 凌晨 4:00-4:05 进化日报 + 自调优
+                if now.hour == 4 and 0 <= now.minute < 5 and last_report != today:
+                    last_report = today
                     try:
                         import pipemind_self_evolution as se
                         report = se.generate_daily_report()
@@ -217,6 +221,17 @@ def _start_consolidation_timer():
                               f"{'; '.join(report['tuning']['changes']) or '无调优'}")
                     except Exception as e:
                         print(f"  ⚠ 进化日报生成失败: {e}")
+
+                # 凌晨 4:30-4:35 每日学习
+                if now.hour == 4 and 30 <= now.minute < 35 and last_learn != today:
+                    last_learn = today
+                    try:
+                        import pipemind_daily_learn as dl
+                        print(f"  📚 开始每日学习 ({today})...")
+                        result = dl.daily_learn()
+                        print(f"  ✅ 学习完成: {result.get('total_learned',0)} 项新知识")
+                    except Exception as e:
+                        print(f"  ⚠ 每日学习失败: {e}")
             except:
                 pass
             time.sleep(3600)  # 每小时检查一次

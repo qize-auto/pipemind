@@ -1039,7 +1039,6 @@ def api_evolution_learn():
     """手动触发学习"""
     try:
         import pipemind_self_evolution as se
-        # 从最近性能数据中学习
         stats = se.PerformanceTracker.stats(days=1)
         if stats.get("error_rate", 0) > 0.1:
             se.AutoLearner.learn_from_error("high_error_rate",
@@ -1048,6 +1047,90 @@ def api_evolution_learn():
             se.AutoLearner.learn_from_error("slow_response",
                 f"Avg duration: {stats['avg_duration']}s", confidence=0.3)
         return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ── 每日学习 API ─────────────────────────────
+
+@app.route("/learn")
+def learn_page():
+    """每日学习日志页面"""
+    try:
+        import pipemind_daily_learn as dl
+        logs = dl.get_learn_log(days=7)
+        skills = dl.get_learned_skills()
+    except:
+        logs = []
+        skills = []
+
+    log_rows = "\n".join(
+        f"<tr><td>{l.get('date','?')}</td>"
+        f"<td>{l.get('total_learned',0)}</td>"
+        f"<td>{'、'.join(s.get('source','') for s in l.get('sources',[]) if s.get('new_skills')) or '—'}</td>"
+        f"<td>{l.get('summary','')[:80]}...</td></tr>"
+        for l in logs
+    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No learn logs yet</td></tr>"
+
+    skill_rows = "\n".join(
+        f"<tr><td>{s.get('name','?')}</td><td>{s.get('desc','')[:50]}</td></tr>"
+        for s in skills
+    ) or "<tr><td colspan='2' style='text-align:center;color:#484f58'>No absorbed skills yet</td></tr>"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind Learn</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;background:#238636;color:#fff}}
+.btn:hover{{background:#2ea043}} .btn-secondary{{background:#21262d;color:#c9d1d9}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
+th{{color:#8b949e;font-size:12px}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
+  <a href="/evolution">🧬 Evolution</a><a href="/learn">📚 Learn</a>
+  <a href="/yixin">🌉 Yixin</a><a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a>
+</nav>
+<h1>📚 Daily Learning</h1>
+<div style="margin-bottom:20px">
+  <button class="btn" onclick="learnNow()">🧠 Learn Now</button>
+  <span id="result" style="margin-left:10px;color:#8b949e"></span>
+</div>
+<div class="card">
+  <h2>📜 Learn History</h2>
+  <table><tr><th>Date</th><th>Learned</th><th>Sources</th><th>Summary</th></tr>{log_rows}</table>
+</div>
+<div class="card">
+  <h2>📦 Absorbed Skills (from Yixin)</h2>
+  <table><tr><th>Name</th><th>Description</th></tr>{skill_rows}</table>
+</div>
+<script>
+function learnNow() {{
+  const r = document.getElementById('result');
+  r.textContent = '⏳ Learning...';
+  fetch('/api/learn/run', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{
+      r.textContent = '✅ ' + (d.summary || 'Done');
+      setTimeout(()=>location.reload(),1500);
+    }}).catch(e => r.textContent = '❌ ' + e);
+}}
+</script>
+</body></html>"""
+
+
+@app.route("/api/learn/run", methods=["POST"])
+def api_learn_run():
+    """手动触发每日学习"""
+    try:
+        import pipemind_daily_learn as dl
+        result = dl.daily_learn()
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)})
 

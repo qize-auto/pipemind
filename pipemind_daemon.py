@@ -165,6 +165,7 @@ def run_server(port=9090):
     print(f"     PID: {os.getpid()}")
     print(f"     🧠 记忆进化: 每日凌晨聚合")
     print(f"     🌉 弈辛守护: 每5分钟健康检查")
+    print(f"     🧬 本体进化: 每日凌晨自调优")
     print(f"     Ctrl+C 停止\n")
 
     # ── 启动记忆进化定时器 ──
@@ -206,6 +207,16 @@ def _start_consolidation_timer():
                               f"{result['knowledge']} 知识, {result['archived']} 归档")
                     except Exception as e:
                         print(f"  ⚠ 聚合失败: {e}")
+
+                # 凌晨 4:00 生成进化日报 + 自调优
+                if now.hour == 4 and 0 <= now.minute < 5 and last_date != today:
+                    try:
+                        import pipemind_self_evolution as se
+                        report = se.generate_daily_report()
+                        print(f"  🧬 进化日报已生成: {report['performance']['total']} 对话, "
+                              f"{'; '.join(report['tuning']['changes']) or '无调优'}")
+                    except Exception as e:
+                        print(f"  ⚠ 进化日报生成失败: {e}")
             except:
                 pass
             time.sleep(3600)  # 每小时检查一次

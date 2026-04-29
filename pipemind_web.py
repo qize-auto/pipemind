@@ -879,6 +879,179 @@ def api_yixin_autofix():
         return jsonify({"ok": False, "error": str(e)})
 
 
+# ── 本体进化 API ──────────────────────────────
+
+@app.route("/evolution")
+def evolution_page():
+    """进化状态面板"""
+    try:
+        import pipemind_self_evolution as se
+        summary = se.format_evolution_summary()
+        perf = se.PerformanceTracker.stats(days=7)
+        tuning = se.SelfTuner.get_config()
+        lessons = se.AutoLearner._load()
+        reports = se.get_recent_reports(days=7)
+    except:
+        summary = "系统初始化中"
+        perf = {"total": 0, "avg_duration": 0, "trend": "unknown"}
+        tuning = {}
+        lessons = []
+        reports = []
+
+    high_conf = [l for l in lessons if l.get("confidence", 0) > 0.6]
+
+    report_rows = "\n".join(
+        f"<tr><td>{r.get('date','?')}</td>"
+        f"<td>{r['performance'].get('total',0)}</td>"
+        f"<td>{r['performance'].get('avg_duration',0)}s</td>"
+        f"<td>{r['performance'].get('trend','?')}</td>"
+        f"<td>{'; '.join(r['tuning'].get('changes',[]))[:40] or '—'}</td></tr>"
+        for r in reports[-7:]
+    ) or "<tr><td colspan='5' style='text-align:center;color:#484f58'>No reports yet</td></tr>"
+
+    lesson_rows = "\n".join(
+        f"<tr><td><span class='conf-{'high' if l.get('confidence',0)>0.7 else 'med' if l.get('confidence',0)>0.4 else 'low'}'>"
+        f"{l.get('confidence',0):.0%}</span></td>"
+        f"<td>{l.get('trigger','?')}</td>"
+        f"<td>{l.get('lesson','')[:50]}</td>"
+        f"<td>{l.get('count',0)}</td></tr>"
+        for l in sorted(lessons, key=lambda x: -x.get('confidence',0))[:10]
+    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No lessons yet</td></tr>"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind Evolution</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
+.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
+.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
+th{{color:#8b949e;font-size:12px}}
+.conf-high{{color:#7ee787}} .conf-med{{color:#d29922}} .conf-low{{color:#484f58}}
+.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin:4px;background:#238636;color:#fff}}
+.btn:hover{{background:#2ea043}}
+.btn-secondary{{background:#21262d;color:#c9d1d9}}
+pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:150px;overflow:auto}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
+  <a href="/evolution">🧬 Evolution</a>
+  <a href="/yixin">🌉 Yixin</a>
+  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a>
+</nav>
+
+<h1>🧬 Self-Evolution</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="num">{perf['total']}</div><div class="label">Conversations (7d)</div></div>
+  <div class="stat"><div class="num">{perf['avg_duration']}s</div><div class="label">Avg Response</div></div>
+  <div class="stat"><div class="num" style="color:{'#7ee787' if perf.get('trend')=='improving' else '#d29922' if perf.get('trend')=='stable' else '#f85149'}">{perf.get('trend','?')}</div><div class="label">Trend</div></div>
+  <div class="stat"><div class="num">{len(high_conf)}</div><div class="label">Learned Lessons</div></div>
+</div>
+
+<div class="card">
+  <h2>🎛 Current Parameters</h2>
+  <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <span>🌡 temp: <strong>{tuning.get('temperature','?')}</strong></span>
+    <span>📏 max_tokens: <strong>{tuning.get('max_tokens','?')}</strong></span>
+    <span>🔧 retry: <strong>{tuning.get('retry_attempts','?')}</strong></span>
+    <span>🛠 tool_limit: <strong>{tuning.get('max_tool_calls_per_turn','?')}</strong></span>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-secondary" onclick="tuneNow()">🔧 Auto-Tune Now</button>
+    <button class="btn btn-secondary" onclick="resetTune()">↺ Reset</button>
+    <span id="tuneResult" style="margin-left:10px;color:#8b949e"></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📜 Evolution Reports</h2>
+  <table><tr><th>Date</th><th>Conversations</th><th>Avg Time</th><th>Trend</th><th>Changes</th></tr>{report_rows}</table>
+</div>
+
+<div class="card">
+  <h2>📖 Auto-Learned Lessons</h2>
+  <table><tr><th>Confidence</th><th>Trigger</th><th>Lesson</th><th>Count</th></tr>{lesson_rows}</table>
+  <div style="margin-top:10px">
+    <button class="btn btn-secondary" onclick="learnNow()">🧠 Learn from Recent</button>
+    <span id="learnResult" style="margin-left:10px;color:#8b949e"></span>
+  </div>
+</div>
+
+<script>
+function tuneNow() {{
+  const r = document.getElementById('tuneResult');
+  r.textContent = '⏳ Tuning...';
+  fetch('/api/evolution/tune', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + (d.changes.join('; ') || 'No changes'); setTimeout(()=>location.reload(),1500); }})
+    .catch(e => r.textContent = '❌ ' + e);
+}}
+function resetTune() {{
+  const r = document.getElementById('tuneResult');
+  r.textContent = '⏳ Resetting...';
+  fetch('/api/evolution/reset', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{ r.textContent = '✅ Reset'; setTimeout(()=>location.reload(),1500); }})
+    .catch(e => r.textContent = '❌ ' + e);
+}}
+function learnNow() {{
+  const r = document.getElementById('learnResult');
+  r.textContent = '⏳ Learning...';
+  fetch('/api/evolution/learn', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{ r.textContent = '✅ Done'; setTimeout(()=>location.reload(),1500); }})
+    .catch(e => r.textContent = '❌ ' + e);
+}}
+</script>
+</body></html>"""
+
+
+@app.route("/api/evolution/tune", methods=["POST"])
+def api_evolution_tune():
+    """手动触发自调优"""
+    try:
+        import pipemind_self_evolution as se
+        perf = se.PerformanceTracker.stats(days=3)
+        result = se.SelfTuner.auto_tune(perf)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/evolution/reset", methods=["POST"])
+def api_evolution_reset():
+    """重置调优参数"""
+    try:
+        import pipemind_self_evolution as se
+        state = se.SelfTuner.reset()
+        return jsonify({"ok": True, "state": state})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/evolution/learn", methods=["POST"])
+def api_evolution_learn():
+    """手动触发学习"""
+    try:
+        import pipemind_self_evolution as se
+        # 从最近性能数据中学习
+        stats = se.PerformanceTracker.stats(days=1)
+        if stats.get("error_rate", 0) > 0.1:
+            se.AutoLearner.learn_from_error("high_error_rate",
+                f"Error rate: {stats['error_rate']}", confidence=0.4)
+        if stats.get("avg_duration", 0) > 20:
+            se.AutoLearner.learn_from_error("slow_response",
+                f"Avg duration: {stats['avg_duration']}s", confidence=0.3)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

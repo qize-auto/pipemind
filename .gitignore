@@ -9,3 +9,4 @@ config.json
 # WSL Bridge (private - local paths and env config)
 pipemind_wsl_bridge.py
 memory/_yixin_events.json
+templates/yixin.html

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Learn</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+h1{color:#f0f6fc}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;background:#238636;color:#fff;margin:4px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}
+th{color:#8b949e;font-size:12px}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Daily Learning</h1>
+
+<div style="margin-bottom:20px">
+  <button class="btn" onclick="learnNow()">Learn Now</button>
+  <span id="result" style="margin-left:10px;color:#8b949e;font-size:13px"></span>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Learn History</h2>
+  <table><tr><th>Date</th><th>Learned</th><th>Sources</th><th>Summary</th></tr><tbody id="logTable"></tbody></table>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Absorbed Skills (from Yixin)</h2>
+  <table><tr><th>Name</th><th>Description</th></tr><tbody id="skillTable"></tbody></table>
+</div>
+
+<script>
+async function load() {
+  const logs = await fetch('/api/learn/logs').then(r=>r.json());
+  document.getElementById('logTable').innerHTML = logs.slice(-7).reverse().map(l =>
+    '<tr><td>' + (l.date||'') + '</td><td>' + (l.total_learned||0) + '</td><td>' +
+    ((l.sources||[]).filter(s=>s.new_skills).map(s=>s.source).join('、')||'—') + '</td><td>' +
+    ((l.summary||'').slice(0,80)||'') + '</td></tr>'
+  ).join('') || '<tr><td colspan=4 style=text-align:center;color:#484f58>No learn logs yet</td></tr>';
+
+  const skills = await fetch('/api/learn/skills').then(r=>r.json());
+  document.getElementById('skillTable').innerHTML = skills.map(s =>
+    '<tr><td>' + (s.name||'') + '</td><td>' + ((s.desc||'').slice(0,50)||'') + '</td></tr>'
+  ).join('') || '<tr><td colspan=2 style=text-align:center;color:#484f58>No absorbed skills yet</td></tr>';
+}
+
+async function learnNow() {
+  const r = document.getElementById('result'); r.textContent = 'Learning...';
+  const d = await fetch('/api/learn/run', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());
+  r.textContent = (d.summary||'Done').slice(0,80);
+  setTimeout(()=>load(),1000);
+}
+load();
+</script>
+</body>
+</html>

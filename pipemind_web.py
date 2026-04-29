@@ -731,98 +731,12 @@ def api_daemon_restart():
 
 @app.route("/memory")
 def memory_page():
-    """记忆进化控制台页面"""
-    try:
-        import pipemind_memory_evolution as evo
-        stats = evo.get_stats()
-        logs = evo.get_consolidation_log(days=7)
-    except Exception:
-        stats = {"total": 0, "by_type": {}, "top": []}
-        logs = []
-
-    log_rows = "\n".join(
-        f"<tr><td>{l.get('time','?')[:10]}</td><td>{l.get('sessions',0)}</td>"
-        f"<td>{l.get('knowledge',0)}</td><td>{l.get('archived',0)}</td></tr>"
-        for l in logs[-7:]
-    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No consolidations yet</td></tr>"
-
-    top_items = "\n".join(
-        f"<tr><td>{t.get('type','?')}</td><td>{t['content']}</td><td>{t.get('score',0)}</td></tr>"
-        for t in stats.get("top", [])
-    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No knowledge yet</td></tr>"
-
-    types = "".join(
-        f'<span style="display:inline-block;background:#1f2937;padding:4px 12px;border-radius:12px;margin:4px;font-size:13px">'
-        f'{t}: {c}</span>'
-        for t, c in stats.get("by_type", {}).items()
-    ) or '<span style="color:#484f58">(empty)</span>'
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Memory</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}}
-h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
-.stat .num{{font-size:28px;color:#58a6ff;font-weight:bold}}
-.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px;background:#238636;color:#fff}}
-.btn:hover{{background:#2ea043}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
-  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a><a href="/providers">📡 Providers</a>
-</nav>
-
-<h1>🧠 Memory Evolution</h1>
-
-<div class="stat-row">
-  <div class="stat"><div class="num">{stats['total']}</div><div class="label">Knowledge</div></div>
-  <div class="stat"><div class="num">{stats.get('avg_importance',0)}</div><div class="label">Avg Importance</div></div>
-  <div class="stat"><div class="num">{stats.get('forget_days',30)}d</div><div class="label">Auto-forget</div></div>
-</div>
-
-<div class="card">
-  <h2>📊 Type Distribution</h2>
-  <div style="margin-top:10px">{types}</div>
-</div>
-
-<div class="card">
-  <h2>🏆 Top Knowledge</h2>
-  <table><tr><th>Type</th><th>Content</th><th>Score</th></tr>{top_items}</table>
-</div>
-
-<div class="card">
-  <h2>📜 Consolidation History</h2>
-  <div style="margin-bottom:10px">
-    <button class="btn" onclick="consolidate()">🔄 Run Consolidation Now</button>
-    <span id="result" style="margin-left:10px;color:#8b949e"></span>
-  </div>
-  <table><tr><th>Date</th><th>Sessions</th><th>Knowledge</th><th>Archived</th></tr>{log_rows}</table>
-</div>
-
-<script>
-function consolidate() {{
-  const r = document.getElementById('result');
-  r.textContent = '⏳ Running...';
-  fetch('/api/memory/consolidate', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{
-      r.textContent = '✅ ' + d.sessions + ' sessions, ' + d.knowledge + ' knowledge';
-      setTimeout(() => location.reload(), 1500);
-    }}).catch(e => r.textContent = '❌ ' + e);
-}}
-</script>
-</body></html>"""
-
-
+    """Page: memory"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "memory.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/memory/consolidate", methods=["POST"])
 def api_memory_consolidate():
     """手动触发记忆聚合"""
@@ -834,142 +748,34 @@ def api_memory_consolidate():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/memory/stats")
+def api_memory_stats():
+    try:
+        import pipemind_memory_evolution as evo
+        return jsonify(evo.get_stats())
+    except Exception as e:
+        return jsonify({})
+
+
+@app.route("/api/memory/logs")
+def api_memory_logs():
+    try:
+        import pipemind_memory_evolution as evo
+        return jsonify(evo.get_consolidation_log(days=7))
+    except Exception as e:
+        return jsonify([])
+
+
 # ── 弈辛守护 API ──────────────────────────────
 
 @app.route("/yixin")
 def yixin_page():
-    """弈辛守护面板"""
-    try:
-        import pipemind_wsl_bridge as wsl
-        mon = wsl.get_monitor()
-        s = mon.status
-        presets = wsl.get_presets()
-        events = wsl.get_events(limit=30)
-    except Exception:
-        s = {"running": False, "model": "?", "connected": False}
-        presets = []
-        events = []
-
-    status_badge = "🟢 Running" if s.get("running") else "🔴 Stopped"
-    api_badge = "✅ Connected" if s.get("connected") else "❌ Disconnected"
-
-    preset_btns = "\n".join(
-        f'<button class="btn {"btn-primary" if p.get("has_key") else "btn-disabled"}" '
-        f'onclick="switchPreset({p["index"]})" id="preset-{p["index"]}">'
-        f'{p["name"]} ({"🔑" if p.get("has_key") else "❌"})</button>'
-        for p in presets
-    ) or "<p style='color:#484f58'>No presets configured</p>"
-
-    event_rows = "\n".join(
-        f'<tr><td>{e.get("time","?")[11:19]}</td>'
-        f'<td><span class="tag tag-{e.get("kind","info")}">{e.get("kind","?")}</span></td>'
-        f'<td>{e.get("message","")[:60]}</td></tr>'
-        for e in events[-15:]
-    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No events yet</td></tr>"
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind - Yixin</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}}
-h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
-.stat .num{{font-size:24px;font-weight:bold}}
-.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
-.green .num{{color:#7ee787}}
-.red .num{{color:#f85149}}
-.yellow .num{{color:#d29922}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin:4px}}
-.btn-primary{{background:#238636;color:#fff}}
-.btn-danger{{background:#da3633;color:#fff}}
-.btn-secondary{{background:#21262d;color:#c9d1d9}}
-.btn-disabled{{background:#21262d;color:#484f58;cursor:not-allowed}}
-.tag{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}}
-.tag-ok{{background:#238636;color:#fff}}
-.tag-fail{{background:#da3633;color:#fff}}
-.tag-auto_fixed{{background:#d29922;color:#000}}
-.tag-auto_fix_start{{background:#1f6feb;color:#fff}}
-.tag-auto_fix_fail{{background:#da3633;color:#fff}}
-pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:200px;overflow:auto}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
-  <a href="/yixin">🌉 Yixin</a>
-  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a><a href="/providers">📡 Providers</a>
-</nav>
-
-<h1>🌉 Yixin Guardian</h1>
-
-<div class="stat-row">
-  <div class="stat {'green' if s.get('running') else 'red'}"><div class="num">{status_badge}</div><div class="label">Process</div></div>
-  <div class="stat {'green' if s.get('connected') else 'red'}"><div class="num">{api_badge}</div><div class="label">API</div></div>
-  <div class="stat"><div class="num" style="color:#58a6ff">{s.get('model','?')}</div><div class="label">Model</div></div>
-  <div class="stat"><div class="num">{s.get('auto_fixes',0)}</div><div class="label">Auto Fixes</div></div>
-  <div class="stat"><div class="num">{s.get('fail_count',0)}</div><div class="label">Fail Streak</div></div>
-</div>
-
-<div class="card">
-  <h2>🎮 Controls</h2>
-  <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button class="btn btn-secondary" onclick="checkNow()">🔍 Check Now</button>
-    <button class="btn btn-primary" onclick="restartYixin()">🔄 Restart Yixin</button>
-    <button class="btn btn-danger" onclick="stopYixin()">⏹ Stop Yixin</button>
-    <button class="btn btn-secondary" onclick="fixNow()">🔧 Auto-Fix Now</button>
-  </div>
-  <div id="actionResult" style="margin-top:10px;font-size:14px;color:#8b949e"></div>
-</div>
-
-<div class="card">
-  <h2>📡 Preset Models</h2>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">{preset_btns}</div>
-  <div id="presetResult" style="margin-top:10px;font-size:13px;color:#8b949e"></div>
-</div>
-
-<div class="card">
-  <h2>📜 Event Log</h2>
-  <table><tr><th>Time</th><th>Type</th><th>Message</th></tr>{event_rows}</table>
-</div>
-
-<div class="card">
-  <h2>📄 Config (raw)</h2>
-  <pre id="configView">Loading...</pre>
-</div>
-
-<script>
-function act(url, msg, el) {{
-  const r = document.getElementById(el||'actionResult');
-  r.textContent = '⏳ ' + msg + '...';
-  fetch(url, {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:'{{}}'}})
-    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + JSON.stringify(d).slice(0,80); setTimeout(()=>location.reload(),2000); }})
-    .catch(e => r.textContent = '❌ ' + e);
-}}
-function checkNow() {{ act('/api/yixin/check', 'Checking'); }}
-function restartYixin() {{ act('/api/yixin/restart', 'Restarting'); }}
-function stopYixin() {{ act('/api/yixin/stop', 'Stopping'); }}
-function fixNow() {{ act('/api/yixin/auto-fix', 'Auto-fixing'); }}
-function switchPreset(idx) {{
-  const r = document.getElementById('presetResult');
-  r.textContent = '⏳ Switching...';
-  fetch('/api/yixin/switch', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{preset:idx}})}})
-    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + (d.ok ? 'Switched to ' + d.name : d.error); setTimeout(()=>location.reload(),2000); }})
-    .catch(e => r.textContent = '❌ ' + e);
-}}
-fetch('/api/yixin/config').then(r=>r.json()).then(d => {{
-  document.getElementById('configView').textContent = JSON.stringify(d, null, 2);
-}}).catch(()=>{{}});
-setInterval(() => location.reload(), 15000);
-</script>
-</body></html>"""
-
-
+    """Page: yixin"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "yixin.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/yixin/status")
 def api_yixin_status():
     """弈辛守护状态"""
@@ -1079,134 +885,12 @@ def api_yixin_autofix():
 
 @app.route("/evolution")
 def evolution_page():
-    """进化状态面板"""
-    try:
-        import pipemind_self_evolution as se
-        summary = se.format_evolution_summary()
-        perf = se.PerformanceTracker.stats(days=7)
-        tuning = se.SelfTuner.get_config()
-        lessons = se.AutoLearner._load()
-        reports = se.get_recent_reports(days=7)
-    except Exception:
-        summary = "系统初始化中"
-        perf = {"total": 0, "avg_duration": 0, "trend": "unknown"}
-        tuning = {}
-        lessons = []
-        reports = []
-
-    high_conf = [l for l in lessons if l.get("confidence", 0) > 0.6]
-
-    report_rows = "\n".join(
-        f"<tr><td>{r.get('date','?')}</td>"
-        f"<td>{r['performance'].get('total',0)}</td>"
-        f"<td>{r['performance'].get('avg_duration',0)}s</td>"
-        f"<td>{r['performance'].get('trend','?')}</td>"
-        f"<td>{'; '.join(r['tuning'].get('changes',[]))[:40] or '—'}</td></tr>"
-        for r in reports[-7:]
-    ) or "<tr><td colspan='5' style='text-align:center;color:#484f58'>No reports yet</td></tr>"
-
-    lesson_rows = "\n".join(
-        f"<tr><td><span class='conf-{'high' if l.get('confidence',0)>0.7 else 'med' if l.get('confidence',0)>0.4 else 'low'}'>"
-        f"{l.get('confidence',0):.0%}</span></td>"
-        f"<td>{l.get('trigger','?')}</td>"
-        f"<td>{l.get('lesson','')[:50]}</td>"
-        f"<td>{l.get('count',0)}</td></tr>"
-        for l in sorted(lessons, key=lambda x: -x.get('confidence',0))[:10]
-    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No lessons yet</td></tr>"
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Evolution</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
-.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
-.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-.conf-high{{color:#7ee787}} .conf-med{{color:#d29922}} .conf-low{{color:#484f58}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin:4px;background:#238636;color:#fff}}
-.btn:hover{{background:#2ea043}}
-.btn-secondary{{background:#21262d;color:#c9d1d9}}
-pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:150px;overflow:auto}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
-  <a href="/evolution">🧬 Evolution</a>
-  <a href="/yixin">🌉 Yixin</a>
-  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a>
-</nav>
-
-<h1>🧬 Self-Evolution</h1>
-
-<div class="stat-row">
-  <div class="stat"><div class="num">{perf['total']}</div><div class="label">Conversations (7d)</div></div>
-  <div class="stat"><div class="num">{perf['avg_duration']}s</div><div class="label">Avg Response</div></div>
-  <div class="stat"><div class="num" style="color:{'#7ee787' if perf.get('trend')=='improving' else '#d29922' if perf.get('trend')=='stable' else '#f85149'}">{perf.get('trend','?')}</div><div class="label">Trend</div></div>
-  <div class="stat"><div class="num">{len(high_conf)}</div><div class="label">Learned Lessons</div></div>
-</div>
-
-<div class="card">
-  <h2>🎛 Current Parameters</h2>
-  <div style="display:flex;gap:20px;flex-wrap:wrap">
-    <span>🌡 temp: <strong>{tuning.get('temperature','?')}</strong></span>
-    <span>📏 max_tokens: <strong>{tuning.get('max_tokens','?')}</strong></span>
-    <span>🔧 retry: <strong>{tuning.get('retry_attempts','?')}</strong></span>
-    <span>🛠 tool_limit: <strong>{tuning.get('max_tool_calls_per_turn','?')}</strong></span>
-  </div>
-  <div style="margin-top:12px">
-    <button class="btn btn-secondary" onclick="tuneNow()">🔧 Auto-Tune Now</button>
-    <button class="btn btn-secondary" onclick="resetTune()">↺ Reset</button>
-    <span id="tuneResult" style="margin-left:10px;color:#8b949e"></span>
-  </div>
-</div>
-
-<div class="card">
-  <h2>📜 Evolution Reports</h2>
-  <table><tr><th>Date</th><th>Conversations</th><th>Avg Time</th><th>Trend</th><th>Changes</th></tr>{report_rows}</table>
-</div>
-
-<div class="card">
-  <h2>📖 Auto-Learned Lessons</h2>
-  <table><tr><th>Confidence</th><th>Trigger</th><th>Lesson</th><th>Count</th></tr>{lesson_rows}</table>
-  <div style="margin-top:10px">
-    <button class="btn btn-secondary" onclick="learnNow()">🧠 Learn from Recent</button>
-    <span id="learnResult" style="margin-left:10px;color:#8b949e"></span>
-  </div>
-</div>
-
-<script>
-function tuneNow() {{
-  const r = document.getElementById('tuneResult');
-  r.textContent = '⏳ Tuning...';
-  fetch('/api/evolution/tune', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + (d.changes.join('; ') || 'No changes'); setTimeout(()=>location.reload(),1500); }})
-    .catch(e => r.textContent = '❌ ' + e);
-}}
-function resetTune() {{
-  const r = document.getElementById('tuneResult');
-  r.textContent = '⏳ Resetting...';
-  fetch('/api/evolution/reset', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{ r.textContent = '✅ Reset'; setTimeout(()=>location.reload(),1500); }})
-    .catch(e => r.textContent = '❌ ' + e);
-}}
-function learnNow() {{
-  const r = document.getElementById('learnResult');
-  r.textContent = '⏳ Learning...';
-  fetch('/api/evolution/learn', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{ r.textContent = '✅ Done'; setTimeout(()=>location.reload(),1500); }})
-    .catch(e => r.textContent = '❌ ' + e);
-}}
-</script>
-</body></html>"""
-
-
+    """Page: evolution"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "evolution.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/evolution/tune", methods=["POST"])
 def api_evolution_tune():
     """手动触发自调优"""
@@ -1247,79 +931,30 @@ def api_evolution_learn():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/evolution/data")
+def api_evolution_data():
+    try:
+        import pipemind_self_evolution as se
+        return jsonify({
+            "perf": se.PerformanceTracker.stats(days=7),
+            "tuning": se.SelfTuner.get_config(),
+            "reports": se.get_recent_reports(days=7),
+            "lessons": se.AutoLearner._load(),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 每日学习 API ─────────────────────────────
 
 @app.route("/learn")
 def learn_page():
-    """每日学习日志页面"""
-    try:
-        import pipemind_daily_learn as dl
-        logs = dl.get_learn_log(days=7)
-        skills = dl.get_learned_skills()
-    except Exception:
-        logs = []
-        skills = []
-
-    log_rows = "\n".join(
-        f"<tr><td>{l.get('date','?')}</td>"
-        f"<td>{l.get('total_learned',0)}</td>"
-        f"<td>{'、'.join(s.get('source','') for s in l.get('sources',[]) if s.get('new_skills')) or '—'}</td>"
-        f"<td>{l.get('summary','')[:80]}...</td></tr>"
-        for l in logs
-    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No learn logs yet</td></tr>"
-
-    skill_rows = "\n".join(
-        f"<tr><td>{s.get('name','?')}</td><td>{s.get('desc','')[:50]}</td></tr>"
-        for s in skills
-    ) or "<tr><td colspan='2' style='text-align:center;color:#484f58'>No absorbed skills yet</td></tr>"
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Learn</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;background:#238636;color:#fff}}
-.btn:hover{{background:#2ea043}} .btn-secondary{{background:#21262d;color:#c9d1d9}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
-  <a href="/evolution">🧬 Evolution</a><a href="/learn">📚 Learn</a>
-  <a href="/yixin">🌉 Yixin</a><a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a>
-</nav>
-<h1>📚 Daily Learning</h1>
-<div style="margin-bottom:20px">
-  <button class="btn" onclick="learnNow()">🧠 Learn Now</button>
-  <span id="result" style="margin-left:10px;color:#8b949e"></span>
-</div>
-<div class="card">
-  <h2>📜 Learn History</h2>
-  <table><tr><th>Date</th><th>Learned</th><th>Sources</th><th>Summary</th></tr>{log_rows}</table>
-</div>
-<div class="card">
-  <h2>📦 Absorbed Skills (from Yixin)</h2>
-  <table><tr><th>Name</th><th>Description</th></tr>{skill_rows}</table>
-</div>
-<script>
-function learnNow() {{
-  const r = document.getElementById('result');
-  r.textContent = '⏳ Learning...';
-  fetch('/api/learn/run', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{
-      r.textContent = '✅ ' + (d.summary || 'Done');
-      setTimeout(()=>location.reload(),1500);
-    }}).catch(e => r.textContent = '❌ ' + e);
-}}
-</script>
-</body></html>"""
-
-
+    """Page: learn"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "learn.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/learn/run", methods=["POST"])
 def api_learn_run():
     """手动触发每日学习"""
@@ -1331,100 +966,34 @@ def api_learn_run():
         return jsonify({"error": str(e)})
 
 
+@app.route("/api/learn/logs")
+def api_learn_logs():
+    try:
+        import pipemind_daily_learn as dl
+        return jsonify(dl.get_learn_log(days=7))
+    except Exception as e:
+        return jsonify([])
+
+
+@app.route("/api/learn/skills")
+def api_learn_skills():
+    try:
+        import pipemind_daily_learn as dl
+        return jsonify(dl.get_learned_skills())
+    except Exception as e:
+        return jsonify([])
+
+
 # ── 决策引擎 API ────────────────────────────
 
 @app.route("/decisions")
 def decisions_page():
-    """决策引擎面板"""
-    try:
-        import pipemind_decision as dec
-        state = dec.get_current_state()
-        logs = dec.get_decision_log(limit=20)
-    except Exception:
-        state = {}
-        logs = []
-
-    # 状态摘要
-    mem = state.get("memory", {})
-    perf = state.get("performance", {})
-    yixin = state.get("yixin", {})
-
-    state_cards = f"""
-    <div class="stat"><div class="num">{mem.get('total',0)}</div><div class="label">Knowledge</div></div>
-    <div class="stat"><div class="num">{perf.get('today_conversations',0)}</div><div class="label">Conv Today</div></div>
-    <div class="stat"><div class="num" style="color:{'#7ee787' if perf.get('error_rate',0)<0.1 else '#f85149'}">{perf.get('error_rate',0):.0%}</div><div class="label">Error Rate</div></div>
-    <div class="stat"><div class="num" style="color:{'#7ee787' if yixin.get('running') else '#f85149'}">{'🟢' if yixin.get('running') else '🔴'}</div><div class="label">Yixin</div></div>
-    <div class="stat"><div class="num">{perf.get('trend','?')}</div><div class="label">Trend</div></div>"""
-
-    # 决策历史
-    log_rows = "\n".join(
-        f"<tr><td>{l.get('time','?')[11:19]}</td>"
-        f"<td>{'、'.join(l.get('decisions',[])) or '—'}</td>"
-        f"<td>{'; '.join(a.get('result','')[:40] for a in l.get('actions',[])) or '—'}</td></tr>"
-        for l in logs[-10:]
-    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No decisions yet</td></tr>"
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Decisions</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
-.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
-.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;background:#238636;color:#fff}}
-.btn:hover{{background:#2ea043}}
-pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:200px;overflow:auto}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
-  <a href="/evolution">🧬 Evolution</a><a href="/learn">📚 Learn</a>
-  <a href="/decisions">🤖 Decisions</a>
-  <a href="/yixin">🌉 Yixin</a><a href="/home">🏡 Home</a>
-</nav>
-<h1>🤖 Decision Engine</h1>
-<p style="color:#8b949e;margin-bottom:20px">每30分钟自动评估系统状态，决定下一步行动。</p>
-
-<div class="stat-row">{state_cards}</div>
-
-<div class="card">
-  <h2>🎮 Control</h2>
-  <button class="btn" onclick="cycleNow()">🔄 Run Decision Cycle Now</button>
-  <span id="result" style="margin-left:10px;color:#8b949e"></span>
-</div>
-
-<div class="card">
-  <h2>📜 Decision History</h2>
-  <table><tr><th>Time</th><th>Decisions</th><th>Actions Taken</th></tr>{log_rows}</table>
-</div>
-
-<div class="card">
-  <h2>📄 Current State (raw)</h2>
-  <pre>{json.dumps(state, ensure_ascii=False, indent=2)[:500]}</pre>
-</div>
-
-<script>
-function cycleNow() {{
-  const r = document.getElementById('result');
-  r.textContent = '⏳ Running...';
-  fetch('/api/decisions/cycle', {{method:'POST'}})
-    .then(r=>r.json()).then(d => {{
-      r.textContent = '✅ ' + (d.actions?.length || 0) + ' actions taken';
-      setTimeout(()=>location.reload(),1500);
-    }}).catch(e => r.textContent = '❌ ' + e);
-}}
-</script>
-</body></html>"""
-
-
+    """Page: decisions"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "decisions.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/decisions/state")
 def api_decisions_state():
     """当前系统状态"""
@@ -1507,236 +1076,12 @@ def api_doctor_run():
 
 @app.route("/knowledge")
 def knowledge_page():
-    """知识图谱可视化页面"""
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PipeMind Knowledge</title>
-<style>
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}}
-nav{{display:flex;margin-bottom:20px;border-bottom:1px solid rgb(48,54,61);padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-nav a.active{{background:#1f6feb;color:#fff}}
-h1{{color:#f0f6fc;margin-bottom:20px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:16px}}
-.stat-row{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:14px;min-width:90px;flex:1;text-align:center}}
-.stat .num{{font-size:24px;font-weight:bold}}
-.stat .label{{font-size:11px;color:#8b949e;margin-top:3px}}
-.fact .num{{color:#238636}} .pattern .num{{color:#1f6feb}} .decision .num{{color:#d29922}}
-canvas{{background:#0d1117;border:1px solid #30363d;border-radius:8px;width:100%;height:400px;cursor:pointer}}
-.search-row{{display:flex;gap:10px;margin-bottom:16px}}
-.search-row input{{flex:1;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px}}
-.search-row button{{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}}
-.filter-btn{{padding:4px 12px;border:1px solid #30363d;border-radius:12px;cursor:pointer;font-size:12px;background:transparent;color:#8b949e;margin:2px}}
-.filter-btn.active{{background:#1f6feb;color:#fff;border-color:#1f6feb}}
-.knowledge-item{{padding:10px;border-bottom:1px solid #21262d;font-size:14px;cursor:pointer}}
-.knowledge-item:hover{{background:#1c2333}}
-.knowledge-item .tag{{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;margin-right:8px;color:#fff}}
-.tag-fact{{background:#238636}} .tag-pattern{{background:#1f6feb}} .tag-decision{{background:#d29922}}
-#tooltip{{position:fixed;background:#1c2333;border:1px solid #30363d;border-radius:8px;padding:12px;font-size:13px;max-width:300px;display:none;z-index:100;pointer-events:none}}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/knowledge">🧠 Knowledge</a>
-  <a href="/status">📊 Status</a><a href="/evolution">🧬 Evolution</a>
-  <a href="/decisions">🤖 Decisions</a><a href="/yixin">🌉 Yixin</a>
-</nav>
-
-<h1>🧠 Knowledge Graph</h1>
-
-<div class="stat-row" id="statsRow"></div>
-
-<div class="search-row">
-  <input id="searchInput" placeholder="Search knowledge..." onkeydown="if(event.key==='Enter')search()">
-  <button onclick="search()">🔍 Search</button>
-</div>
-
-<div id="filterBar" style="margin-bottom:12px"></div>
-
-<canvas id="graph" width="900" height="400"></canvas>
-<div id="tooltip"></div>
-
-<div class="card" style="margin-top:16px">
-  <h2 style="font-size:15px;margin-bottom:12px">📋 Knowledge Items <span id="itemCount" style="color:#484f58"></span></h2>
-  <div id="knowledgeList"></div>
-</div>
-
-<script>
-const API = (path) => fetch(path).then(r=>r.json());
-let graphData = {{nodes:[], edges:[]}};
-let filteredNodes = [];
-let selectedType = 'all';
-let hoveredNode = null;
-
-// ── Load Graph ──
-async function loadGraph() {{
-  const data = await API('/api/knowledge/graph');
-  graphData = data;
-  renderStats(data.stats);
-  renderFilters(data.stats.by_type);
-  filteredNodes = data.nodes;
-  renderGraph();
-  renderList(data.nodes);
-}}
-
-function renderStats(stats) {{
-  const row = document.getElementById('statsRow');
-  row.innerHTML = `
-    <div class="stat fact"><div class="num">${{stats.by_type?.fact||0}}</div><div class="label">Facts</div></div>
-    <div class="stat pattern"><div class="num">${{stats.by_type?.pattern||0}}</div><div class="label">Patterns</div></div>
-    <div class="stat decision"><div class="num">${{stats.by_type?.decision||0}}</div><div class="label">Decisions</div></div>
-    <div class="stat"><div class="num">${{stats.connections||0}}</div><div class="label">Connections</div></div>
-    <div class="stat"><div class="num">${{stats.total_knowledge||0}}</div><div class="label">Total</div></div>
-  `;
-}}
-
-function renderFilters(byType) {{
-  const bar = document.getElementById('filterBar');
-  let html = '<button class="filter-btn active" onclick="setFilter(\\'all\\')">All</button>';
-  for (const [type, count] of Object.entries(byType||{{}})) {{
-    html += `<button class="filter-btn" onclick="setFilter('${{type}}')">${{type}} (${{count}})</button>`;
-  }}
-  bar.innerHTML = html;
-}}
-
-function setFilter(type) {{
-  selectedType = type;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent.startsWith(type)));
-  filteredNodes = type === 'all' ? graphData.nodes : graphData.nodes.filter(n => n.type === type);
-  renderGraph();
-  renderList(filteredNodes);
-}}
-
-// ── Graph Rendering ──
-function renderGraph() {{
-  const canvas = document.getElementById('graph');
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  if (!filteredNodes.length) {{
-    ctx.fillStyle = '#484f58'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('No knowledge yet. Consolidation runs daily at 3 AM.', w/2, h/2);
-    return;
-  }}
-
-  // Layout: simple circular arrangement
-  const cx = w/2, cy = h/2;
-  const radius = Math.min(w, h) * 0.35;
-  const nodeMap = {{}};
-  filteredNodes.forEach((n, i) => {{
-    const angle = (i / filteredNodes.length) * 2 * Math.PI - Math.PI/2;
-    n.x = cx + radius * Math.cos(angle);
-    n.y = cy + radius * Math.sin(angle);
-    nodeMap[n.id] = n;
-  }});
-
-  // Draw edges
-  graphData.edges.forEach(e => {{
-    const from = nodeMap[e.from], to = nodeMap[e.to];
-    if (from && to) {{
-      ctx.strokeStyle = e.strength > 0.6 ? '#58a6ff' : '#30363d';
-      ctx.lineWidth = e.strength * 2;
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.stroke();
-    }}
-  }});
-
-  // Draw nodes
-  filteredNodes.forEach(n => {{
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, Math.max(4, n.importance * 2.5), 0, 2 * Math.PI);
-    ctx.fillStyle = n.color;
-    ctx.fill();
-    ctx.strokeStyle = '#0d1117';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }});
-
-  // Labels for important nodes
-  filteredNodes.filter(n => n.importance >= 4).forEach(n => {{
-    ctx.fillStyle = '#8b949e';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(n.label.slice(0, 15), n.x, n.y - Math.max(4, n.importance * 2.5) - 4);
-  }});
-}}
-
-// ── Knowledge List ──
-function renderList(nodes) {{
-  const list = document.getElementById('knowledgeList');
-  document.getElementById('itemCount').textContent = '(' + nodes.length + ')';
-  list.innerHTML = nodes.sort((a,b) => b.score - a.score).map(n => `
-    <div class="knowledge-item" onmouseenter="showTooltip(event,'${{n.id}}')" onmouseleave="hideTooltip()">
-      <span class="tag tag-${{n.type}}">${{n.type}}</span>
-      ${{n.label}}
-      <span style="float:right;font-size:11px;color:#484f58">score:${{n.score}} · ${{n.created}}</span>
-    </div>
-  `).join('');
-}}
-
-function showTooltip(e, id) {{
-  const n = graphData.nodes.find(n => n.id === id);
-  if (!n) return;
-  const tip = document.getElementById('tooltip');
-  tip.style.display = 'block';
-  tip.style.left = (e.clientX + 15) + 'px';
-  tip.style.top = (e.clientY + 15) + 'px';
-  tip.innerHTML = `
-    <strong style="color:${{n.color}}">${{n.type}}</strong><br>
-    <span style="color:#f0f6fc">${{n.label}}</span><br><br>
-    importance: ${{'★'.repeat(n.importance)}}<br>
-    score: ${{n.score}} · accessed: ${{n.access_count}}x<br>
-    created: ${{n.created}}
-  `;
-}}
-
-function hideTooltip() {{
-  document.getElementById('tooltip').style.display = 'none';
-}}
-
-// ── Search ──
-async function search() {{
-  const q = document.getElementById('searchInput').value.trim();
-  if (!q) {{ loadGraph(); return; }}
-  const results = await API('/api/knowledge/search?q=' + encodeURIComponent(q));
-  filteredNodes = results.map(r => ({{id:r.id, label:r.content.slice(0,40), type:r.type, color:{{fact:'#238636',pattern:'#1f6feb',decision:'#d29922'}}[r.type]||'#58a6ff', importance:r.importance, score:r.score, created:r.created}}));
-  renderGraph();
-  renderList(filteredNodes);
-}}
-
-document.getElementById('graph').addEventListener('mousemove', (e) => {{
-  // Check if hovering near a node
-  const rect = e.target.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (900 / rect.width);
-  const my = (e.clientY - rect.top) * (400 / rect.height);
-  let found = null;
-  for (const n of filteredNodes) {{
-    const dx = mx - n.x, dy = my - n.y;
-    if (dx*dx + dy*dy < 200) {{ found = n; break; }}
-  }}
-  if (found && found !== hoveredNode) {{
-    hoveredNode = found;
-    showTooltip(e, found.id);
-  }} else if (!found) {{
-    hoveredNode = null;
-    hideTooltip();
-  }}
-}});
-
-loadGraph();
-</script>
-</body></html>"""
-
-
+    """Page: knowledge"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "knowledge.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 @app.route("/api/knowledge/graph")
 def api_knowledge_graph():
     try:

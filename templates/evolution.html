@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Evolution</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+h1{color:#f0f6fc} p{color:#8b949e;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.stat-row{display:flex;gap:15px;flex-wrap:wrap}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;flex:1;text-align:center}
+.stat .num{font-size:24px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}
+th{color:#8b949e;font-size:11px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
+.btn-primary{background:#238636;color:#fff}
+.btn-secondary{background:#21262d;color:#c9d1d9}
+.conf-high{color:#7ee787} .conf-med{color:#d29922} .conf-low{color:#484f58}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Self-Evolution</h1>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Current Parameters</h2>
+  <div id="paramsView" style=display:flex;gap:20px;flex-wrap:wrap></div>
+  <div style=margin-top:12px>
+    <button class="btn btn-primary" onclick="tuneNow()">Auto-Tune Now</button>
+    <button class="btn btn-secondary" onclick="resetTune()">Reset</button>
+    <span id="tuneResult" style=margin-left:10px;color:#8b949e></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Evolution Reports</h2>
+  <table><tr><th>Date</th><th>Conversations</th><th>Avg Time</th><th>Trend</th><th>Changes</th></tr><tbody id="reportTable"></tbody></table>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Auto-Learned Lessons</h2>
+  <table><tr><th>Confidence</th><th>Trigger</th><th>Lesson</th><th>Count</th></tr><tbody id="lessonTable"></tbody></table>
+</div>
+
+<script>
+async function load() {
+  const s = await fetch('/api/evolution/data').then(r=>r.json());
+  const perf = s.perf||{}; const tuning = s.tuning||{}; const reports = s.reports||[];
+  const lessons = s.lessons||[];
+  const highConf = lessons.filter(l => (l.confidence||0) > 0.6);
+  const trend = perf.trend||'stable';
+  const trendColor = trend==='improving'?'#7ee787':trend==='degrading'?'#f85149':'#d29922';
+
+  document.getElementById('statsRow').innerHTML =
+    '<div class=stat><div class=num>' + (perf.total||0) + '</div><div class=label>Conversations (7d)</div></div>' +
+    '<div class=stat><div class=num>' + (perf.avg_duration||0) + 's</div><div class=label>Avg Response</div></div>' +
+    '<div class=stat><div class=num style=color:' + trendColor + '>' + trend + '</div><div class=label>Trend</div></div>' +
+    '<div class=stat><div class=num>' + highConf.length + '</div><div class=label>Learned Lessons</div></div>';
+
+  document.getElementById('paramsView').innerHTML =
+    '<span>temp: <strong>' + (tuning.temperature||'?') + '</strong></span>' +
+    '<span>max_tokens: <strong>' + (tuning.max_tokens||'?') + '</strong></span>' +
+    '<span>retry: <strong>' + (tuning.retry_attempts||'?') + '</strong></span>';
+
+  document.getElementById('reportTable').innerHTML = reports.slice(-7).reverse().map(r =>
+    '<tr><td>' + (r.date||'') + '</td><td>' + ((r.performance||{}).total||0) + '</td><td>' + ((r.performance||{}).avg_duration||0) + 's</td><td>' + ((r.performance||{}).trend||'') + '</td><td>' + (((r.tuning||{}).changes||[]).join('; ').slice(0,40)||'—') + '</td></tr>'
+  ).join('') || '<tr><td colspan=5 style=text-align:center;color:#484f58>No reports</td></tr>';
+
+  document.getElementById('lessonTable').innerHTML = lessons.sort((a,b)=>(b.confidence||0)-(a.confidence||0)).slice(0,10).map(l =>
+    '<tr><td><span class=conf-' + ((l.confidence||0)>0.7?'high':(l.confidence||0)>0.4?'med':'low') + '>' + Math.round((l.confidence||0)*100) + '%</span></td>' +
+    '<td>' + (l.trigger||'') + '</td><td>' + ((l.lesson||'').slice(0,50)) + '</td><td>' + (l.count||0) + '</td></tr>'
+  ).join('') || '<tr><td colspan=4 style=text-align:center;color:#484f58>No lessons</td></tr>';
+}
+
+async function tuneNow() {
+  const r = document.getElementById('tuneResult'); r.textContent = 'Tuning...';
+  const d = await fetch('/api/evolution/tune', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());
+  r.textContent = (d.changes||[]).join('; ') || 'No changes';
+  setTimeout(()=>load(),1000);
+}
+async function resetTune() {
+  const r = document.getElementById('tuneResult'); r.textContent = 'Resetting...';
+  await fetch('/api/evolution/reset', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  r.textContent = 'Reset';
+  setTimeout(()=>load(),1000);
+}
+load();
+</script>
+</body>
+</html>

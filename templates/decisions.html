@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Decisions</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+h1{color:#f0f6fc} p{color:#8b949e;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.stat-row{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:100px;flex:1;text-align:center}
+.stat .num{font-size:24px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}
+th{color:#8b949e;font-size:11px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;background:#238636;color:#fff}
+.btn:hover{background:#2ea043}
+pre{background:#0d1117;padding:12px;border-radius:8px;font-size:12px;max-height:200px;overflow:auto}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Decision Engine</h1>
+<p>Evaluates system state every 30 minutes, decides next actions.</p>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Control</h2>
+  <button class="btn" onclick="cycleNow()">Run Decision Cycle Now</button>
+  <span id="result" style="margin-left:10px;color:#8b949e"></span>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Decision History</h2>
+  <table><tr><th>Time</th><th>Decisions</th><th>Actions</th></tr><tbody id="logTable"></tbody></table>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Current State</h2>
+  <pre id="stateView">Loading...</pre>
+</div>
+
+<script>
+async function load() {
+  const state = await fetch('/api/decisions/state').then(r=>r.json());
+  const s = state||{};
+  const mem = s.memory||{}; const perf = s.performance||{}; const yx = s.yixin||{};
+  const trend = perf.trend||'stable';
+  const trendColor = trend==='improving'?'#7ee787':trend==='degrading'?'#f85149':'#d29922';
+  document.getElementById('statsRow').innerHTML =
+    '<div class=stat><div class=num>' + (mem.total||0) + '</div><div class=label>Knowledge</div></div>' +
+    '<div class=stat><div class=num>' + (perf.today_conversations||0) + '</div><div class=label>Conv Today</div></div>' +
+    '<div class=stat><div class=num style=color:' + trendColor + '>' + trend + '</div><div class=label>Trend</div></div>';
+
+  const logs = await fetch('/api/decisions/log').then(r=>r.json());
+  document.getElementById('logTable').innerHTML = logs.slice(-10).reverse().map(l =>
+    '<tr><td>' + (l.time||'').slice(11,19) + '</td><td>' + ((l.decisions||[]).join('、')||'—') + '</td><td>' + ((l.actions||[]).map(a=>a.result||'').join('; ').slice(0,40)||'—') + '</td></tr>'
+  ).join('') || '<tr><td colspan=3 style=text-align:center;color:#484f58>No decisions yet</td></tr>';
+
+  document.getElementById('stateView').textContent = JSON.stringify(state, null, 2).slice(0,500);
+}
+
+async function cycleNow() {
+  const r = document.getElementById('result'); r.textContent = 'Running...';
+  const d = await fetch('/api/decisions/cycle', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());
+  r.textContent = (d.actions||[]).length + ' actions taken';
+  setTimeout(()=>load(),1000);
+}
+load();
+</script>
+</body>
+</html>

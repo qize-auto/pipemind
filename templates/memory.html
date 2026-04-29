@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Memory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+h1{color:#f0f6fc} p{color:#8b949e;margin-bottom:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:14px;min-width:80px;flex:1;text-align:center}
+.stat .num{font-size:24px;font-weight:bold}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+.fact .num{color:#238636} .pattern .num{color:#1f6feb} .decision .num{color:#d29922}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
+.btn-primary{background:#238636;color:#fff}
+.btn-secondary{background:#21262d;color:#c9d1d9}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}
+th{color:#8b949e;font-size:11px}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script>fetch('/api/nav').then(r=>r.text()).then(h=>document.getElementById('nav-placeholder').innerHTML=h)</script>
+
+<h1>Memory Evolution</h1>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Type Distribution</h2>
+  <div id="typeDistribution"></div>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Top Knowledge</h2>
+  <table><tr><th>Type</th><th>Content</th><th>Score</th></tr><tbody id="topTable"></tbody></table>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Consolidation History</h2>
+  <div style=margin-bottom:10px><button class="btn btn-primary" onclick="consolidate()">Run Consolidation Now</button><span id="result" style=margin-left:10px;color:#8b949e></span></div>
+  <table><tr><th>Date</th><th>Sessions</th><th>Knowledge</th><th>Archived</th></tr><tbody id="historyTable"></tbody></table>
+</div>
+
+<script>
+async function load() {
+  const s = await fetch('/api/memory/stats').then(r=>r.json());
+  document.getElementById('statsRow').innerHTML =
+    '<div class=stat class=fact><div class=num>' + (s.total||0) + '</div><div class=label>Knowledge</div></div>' +
+    '<div class=stat><div class=num>' + (s.avg_importance||0) + '</div><div class=label>Avg Importance</div></div>';
+
+  const types = s.by_type||{};
+  document.getElementById('typeDistribution').innerHTML = Object.entries(types).map(([t,c]) =>
+    '<span class=stat style=display:inline-block;width:auto;padding:8px 16px>[' + t + '] ' + c + '</span>'
+  ).join('') || '<span style=color:#484f58>(empty)</span>';
+
+  document.getElementById('topTable').innerHTML = (s.top||[]).map(t =>
+    '<tr><td>' + (t.type||'') + '</td><td>' + ((t.content||'').slice(0,60)) + '</td><td>' + (t.score||0) + '</td></tr>'
+  ).join('') || '<tr><td colspan=3 style=text-align:center;color:#484f58>No knowledge yet</td></tr>';
+
+  const logs = await fetch('/api/memory/logs').then(r=>r.json());
+  document.getElementById('historyTable').innerHTML = logs.slice(-7).map(l =>
+    '<tr><td>' + (l.time||'').slice(0,10) + '</td><td>' + (l.sessions||0) + '</td><td>' + (l.knowledge||0) + '</td><td>' + (l.archived||0) + '</td></tr>'
+  ).join('') || '<tr><td colspan=4 style=text-align:center;color:#484f58>No consolidations</td></tr>';
+}
+
+async function consolidate() {
+  const r = document.getElementById('result'); r.textContent = 'Running...';
+  await fetch('/api/memory/consolidate', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  r.textContent = 'Done';
+  setTimeout(()=>load(),1000);
+}
+load();
+</script>
+</body>
+</html>

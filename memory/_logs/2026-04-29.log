@@ -155,3 +155,4 @@
 {"time": "2026-04-29T09:02:06.860203", "level": "info", "module": "core", "message": "决策引擎已启动"}
 {"time": "2026-04-29T09:02:06.860203", "level": "info", "module": "core", "message": "模块启动: decision_engine"}
 {"time": "2026-04-29T09:02:06.871702", "level": "info", "module": "core", "message": "已启动 4 个子系统"}
+{"time": "2026-04-29T12:17:09.388677", "level": "info", "module": "test", "message": "hello"}

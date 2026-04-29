@@ -85,6 +85,18 @@ class Logger:
         except Exception:
             pass
 
+    def debug(self, msg, **kw):
+        self._log("debug", msg, **kw)
+
+    def info(self, msg, **kw):
+        self._log("info", msg, **kw)
+
+    def warn(self, msg, **kw):
+        self._log("warn", msg, **kw)
+
+    def error(self, msg, **kw):
+        self._log("error", msg, **kw)
+
 
 def _cleanup_old_logs(retain_days=30):
     """删除超过 retain_days 天的日志文件"""

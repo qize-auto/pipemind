@@ -164,10 +164,20 @@ def run_server(port=9090):
     print(f"     http://localhost:{port}")
     print(f"     PID: {os.getpid()}")
     print(f"     🧠 记忆进化: 每日凌晨聚合")
+    print(f"     🌉 弈辛守护: 每5分钟健康检查")
     print(f"     Ctrl+C 停止\n")
 
     # ── 启动记忆进化定时器 ──
     _start_consolidation_timer()
+
+    # ── 启动弈辛健康监控 ──
+    try:
+        import pipemind_wsl_bridge as wsl
+        monitor = wsl.get_monitor()
+        monitor.start()
+        print(f"     ✅ 弈辛监控已启动")
+    except Exception as e:
+        print(f"     ⚠ 弈辛监控启动失败: {e}")
 
     # 启动 Web 服务器（阻塞）
     pipemind_web.run(port=port, daemon_mode=True)

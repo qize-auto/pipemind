@@ -638,6 +638,247 @@ def api_memory_consolidate():
         return jsonify({"error": str(e)})
 
 
+# ── 弈辛守护 API ──────────────────────────────
+
+@app.route("/yixin")
+def yixin_page():
+    """弈辛守护面板"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        mon = wsl.get_monitor()
+        s = mon.status
+        presets = wsl.get_presets()
+        events = wsl.get_events(limit=30)
+    except:
+        s = {"running": False, "model": "?", "connected": False}
+        presets = []
+        events = []
+
+    status_badge = "🟢 Running" if s.get("running") else "🔴 Stopped"
+    api_badge = "✅ Connected" if s.get("connected") else "❌ Disconnected"
+
+    preset_btns = "\n".join(
+        f'<button class="btn {"btn-primary" if p.get("has_key") else "btn-disabled"}" '
+        f'onclick="switchPreset({p["index"]})" id="preset-{p["index"]}">'
+        f'{p["name"]} ({"🔑" if p.get("has_key") else "❌"})</button>'
+        for p in presets
+    ) or "<p style='color:#484f58'>No presets configured</p>"
+
+    event_rows = "\n".join(
+        f'<tr><td>{e.get("time","?")[11:19]}</td>'
+        f'<td><span class="tag tag-{e.get("kind","info")}">{e.get("kind","?")}</span></td>'
+        f'<td>{e.get("message","")[:60]}</td></tr>'
+        for e in events[-15:]
+    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No events yet</td></tr>"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind - Yixin</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}}
+h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
+.stat .num{{font-size:24px;font-weight:bold}}
+.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
+.green .num{{color:#7ee787}}
+.red .num{{color:#f85149}}
+.yellow .num{{color:#d29922}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
+th{{color:#8b949e;font-size:12px}}
+.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin:4px}}
+.btn-primary{{background:#238636;color:#fff}}
+.btn-danger{{background:#da3633;color:#fff}}
+.btn-secondary{{background:#21262d;color:#c9d1d9}}
+.btn-disabled{{background:#21262d;color:#484f58;cursor:not-allowed}}
+.tag{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px}}
+.tag-ok{{background:#238636;color:#fff}}
+.tag-fail{{background:#da3633;color:#fff}}
+.tag-auto_fixed{{background:#d29922;color:#000}}
+.tag-auto_fix_start{{background:#1f6feb;color:#fff}}
+.tag-auto_fix_fail{{background:#da3633;color:#fff}}
+pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:200px;overflow:auto}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
+  <a href="/yixin">🌉 Yixin</a>
+  <a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a><a href="/providers">📡 Providers</a>
+</nav>
+
+<h1>🌉 Yixin Guardian</h1>
+
+<div class="stat-row">
+  <div class="stat {'green' if s.get('running') else 'red'}"><div class="num">{status_badge}</div><div class="label">Process</div></div>
+  <div class="stat {'green' if s.get('connected') else 'red'}"><div class="num">{api_badge}</div><div class="label">API</div></div>
+  <div class="stat"><div class="num" style="color:#58a6ff">{s.get('model','?')}</div><div class="label">Model</div></div>
+  <div class="stat"><div class="num">{s.get('auto_fixes',0)}</div><div class="label">Auto Fixes</div></div>
+  <div class="stat"><div class="num">{s.get('fail_count',0)}</div><div class="label">Fail Streak</div></div>
+</div>
+
+<div class="card">
+  <h2>🎮 Controls</h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-secondary" onclick="checkNow()">🔍 Check Now</button>
+    <button class="btn btn-primary" onclick="restartYixin()">🔄 Restart Yixin</button>
+    <button class="btn btn-danger" onclick="stopYixin()">⏹ Stop Yixin</button>
+    <button class="btn btn-secondary" onclick="fixNow()">🔧 Auto-Fix Now</button>
+  </div>
+  <div id="actionResult" style="margin-top:10px;font-size:14px;color:#8b949e"></div>
+</div>
+
+<div class="card">
+  <h2>📡 Preset Models</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">{preset_btns}</div>
+  <div id="presetResult" style="margin-top:10px;font-size:13px;color:#8b949e"></div>
+</div>
+
+<div class="card">
+  <h2>📜 Event Log</h2>
+  <table><tr><th>Time</th><th>Type</th><th>Message</th></tr>{event_rows}</table>
+</div>
+
+<div class="card">
+  <h2>📄 Config (raw)</h2>
+  <pre id="configView">Loading...</pre>
+</div>
+
+<script>
+function act(url, msg, el) {{
+  const r = document.getElementById(el||'actionResult');
+  r.textContent = '⏳ ' + msg + '...';
+  fetch(url, {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:'{{}}'}})
+    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + JSON.stringify(d).slice(0,80); setTimeout(()=>location.reload(),2000); }})
+    .catch(e => r.textContent = '❌ ' + e);
+}}
+function checkNow() {{ act('/api/yixin/check', 'Checking'); }}
+function restartYixin() {{ act('/api/yixin/restart', 'Restarting'); }}
+function stopYixin() {{ act('/api/yixin/stop', 'Stopping'); }}
+function fixNow() {{ act('/api/yixin/auto-fix', 'Auto-fixing'); }}
+function switchPreset(idx) {{
+  const r = document.getElementById('presetResult');
+  r.textContent = '⏳ Switching...';
+  fetch('/api/yixin/switch', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{preset:idx}})}})
+    .then(r=>r.json()).then(d => {{ r.textContent = '✅ ' + (d.ok ? 'Switched to ' + d.name : d.error); setTimeout(()=>location.reload(),2000); }})
+    .catch(e => r.textContent = '❌ ' + e);
+}}
+fetch('/api/yixin/config').then(r=>r.json()).then(d => {{
+  document.getElementById('configView').textContent = JSON.stringify(d, null, 2);
+}}).catch(()=>{{}});
+setInterval(() => location.reload(), 15000);
+</script>
+</body></html>"""
+
+
+@app.route("/api/yixin/status")
+def api_yixin_status():
+    """弈辛守护状态"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        return jsonify(wsl.get_monitor().status)
+    except Exception as e:
+        return jsonify({"error": str(e), "running": False})
+
+
+@app.route("/api/yixin/config")
+def api_yixin_config():
+    """弈辛当前配置"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        cfg = wsl.YixinConfig.read()
+        # 脱敏
+        if "api_key" in cfg:
+            cfg["api_key"] = cfg["api_key"][:8] + "..." + cfg["api_key"][-4:]
+        return jsonify(cfg)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/yixin/events")
+def api_yixin_events():
+    """事件日志"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        return jsonify(wsl.get_events(limit=50))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/yixin/presets")
+def api_yixin_presets():
+    """预设列表"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        return jsonify(wsl.get_presets())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/yixin/switch", methods=["POST"])
+def api_yixin_switch():
+    """切换模型预设"""
+    data = request.get_json() or {}
+    idx = data.get("preset", 0)
+    key = data.get("api_key", "")
+    try:
+        import pipemind_wsl_bridge as wsl
+        result = wsl.YixinConfig.switch_preset(idx, key)
+        if result.get("ok"):
+            # 自动重启
+            wsl.YixinControl.restart()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/yixin/restart", methods=["POST"])
+def api_yixin_restart():
+    """重启弈辛"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        ok = wsl.YixinControl.restart()
+        return jsonify({"ok": ok})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/yixin/stop", methods=["POST"])
+def api_yixin_stop():
+    """停止弈辛"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        ok = wsl.YixinControl.stop()
+        return jsonify({"ok": ok})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/yixin/check", methods=["POST"])
+def api_yixin_check():
+    """手动触发健康检查"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        wsl.get_monitor().trigger_check()
+        return jsonify(wsl.get_monitor().status)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/yixin/auto-fix", methods=["POST"])
+def api_yixin_autofix():
+    """手动触发自动修复"""
+    try:
+        import pipemind_wsl_bridge as wsl
+        wsl.get_monitor().trigger_auto_fix()
+        return jsonify({"ok": True, "status": wsl.get_monitor().status})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

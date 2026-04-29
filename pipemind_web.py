@@ -261,51 +261,11 @@ def api_stats():
 
 @app.route("/chat")
 def chat_page():
-    return """
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>PipeMind Chat</title>
-<style>body{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:800px;margin:0 auto}
-nav{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}
-nav a{color:#58a6ff;text-decoration:none;padding:8px 16px}
-nav a:hover{background:#1f2937}
-h1{color:#f0f6fc}
-.chat-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:15px;height:400px;overflow-y:auto;margin-bottom:10px}
-.msg{margin-bottom:10px;line-height:1.5}
-.user{color:#58a6ff}
-.pm{color:#7ee787}
-.input-row{display:flex;gap:10px}
-.input-row input{flex:1;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9}
-.input-row button{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}
-</style></head>
-<body>
-<nav><a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a></nav>
-<h1>💬 Chat with PipeMind</h1>
-<div id="chat" class="chat-box"></div>
-<div class="input-row">
-  <input id="input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')send()">
-  <button onclick="send()">Send</button>
-</div>
-<script>
-const chat = document.getElementById('chat');
-function addMsg(role, text) {
-  const d = document.createElement('div'); d.className = 'msg';
-  d.innerHTML = `<strong class="${role}">${role === 'user' ? '🧑' : '🤖'}</strong> ${text}`;
-  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
-}
-function send() {
-  const input = document.getElementById('input');
-  const text = input.value.trim(); if(!text) return;
-  addMsg('user', text); input.value = '';
-  fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})})
-  .then(r=>r.json()).then(d => {
-    if(d.response) addMsg('pm', d.response);
-    if(d.error) addMsg('pm', '❌ ' + d.error);
-  }).catch(e => addMsg('pm', '❌ ' + e));
-}
-</script>
-</body>
-</html>"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "chat.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
@@ -418,90 +378,11 @@ def api_network_event():
 @app.route("/self-improve")
 def self_improve_page():
     """自我改进面板"""
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PipeMind Self-Improve</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
-nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
-nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
-nav a:hover{background:#1f2937}
-h1{color:#f0f6fc;margin-bottom:8px}
-.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
-.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
-.btn-primary{background:#238636;color:#fff}
-.btn-secondary{background:#21262d;color:#c9d1d9}
-pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-size:13px;overflow:auto;max-height:500px;line-height:1.6}
-.suggestion{border-left:3px solid #238636;padding:12px;margin:8px 0;background:#0d1117;border-radius:0 8px 8px 0}
-.suggestion .sev{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;color:#fff;margin-right:8px}
-.sev-critical{background:#da3633} .sev-major{background:#d29922} .sev-minor{background:#21262d}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/self-improve">Improve</a>
-  <a href="/network">Network</a>
-  <a href="/knowledge">Knowledge</a>
-  <a href="/status">Status</a>
-  <a href="/evolution">Evolution</a>
-</nav>
-<h1>AI Self-Improvement</h1>
-<p class="subtitle">PipeMind uses its own AI to analyze and improve itself. All changes are reviewed before applying.</p>
-
-<div class="card">
-  <h2 style="margin-bottom:12px">Run Improvement Cycle</h2>
-  <div>
-    <button class="btn btn-primary" onclick="runCycle(true)">Preview (Dry Run)</button>
-    <button class="btn btn-secondary" onclick="runCycle(false)">Apply Changes</button>
-    <span id="result" style="margin-left:10px;color:#8b949e;font-size:13px"></span>
-  </div>
-</div>
-
-<div id="reportContainer"></div>
-
-<div class="card">
-  <h2 style="margin-bottom:12px">Previous Reports</h2>
-  <pre id="logContainer">Loading...</pre>
-</div>
-
-<script>
-async function runCycle(dryRun) {
-  const r = document.getElementById('result');
-  r.textContent = 'Running AI self-improvement...';
-  const resp = await fetch('/api/self-improve/run', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({dry_run: dryRun})
-  });
-  const data = await resp.json();
-  const c = document.getElementById('reportContainer');
-  c.innerHTML = '<div class=card><h2 style=margin-bottom:12px>' +
-    (dryRun ? 'Preview Report (Dry Run)' : 'Applied Changes') +
-    '</h2><pre>' + escapeHtml(data.report || 'No suggestions') + '</pre></div>';
-  r.textContent = 'Done - ' + (data.total || 0) + ' suggestions';
-  loadLogs();
-}
-
-function escapeHtml(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-async function loadLogs() {
-  try {
-    const logs = await fetch('/api/self-improve/logs').then(r=>r.json());
-    document.getElementById('logContainer').textContent = JSON.stringify(logs.slice(-3), null, 2);
-  } catch(e) {}
-}
-loadLogs();
-</script>
-</body>
-</html>"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "self-improve.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 
 @app.route("/api/self-improve/run", methods=["POST"])
@@ -531,154 +412,11 @@ def api_self_improve_logs():
 @app.route("/chronicle")
 def chronicle_page():
     """生命编年史页面"""
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PipeMind Chronicle</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
-nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
-nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
-nav a:hover{background:#1f2937}
-h1{color:#f0f6fc;margin-bottom:8px}
-.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
-.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:100px;flex:1;text-align:center}
-.stat .num{font-size:28px;font-weight:bold;color:#58a6ff}
-.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
-.growth .num{color:#7ee787}
-.milestone-item{padding:10px 0;border-bottom:1px solid #21262d;font-size:14px;display:flex;gap:12px}
-.milestone-date{color:#484f58;font-size:12px;min-width:80px}
-.milestone-cat{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;color:#fff;min-width:60px;text-align:center}
-.cat-evolution{background:#238636} .cat-learning{background:#1f6feb} .cat-improvement{background:#d29922} .cat-milestone{background:#8b5cf6}
-.narrative-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:20px;font-size:15px;line-height:1.8;color:#e6edf3}
-.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
-.btn-primary{background:#238636;color:#fff}
-.btn-secondary{background:#21262d;color:#c9d1d9}
-canvas{width:100%;height:250px;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin-top:12px}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/chronicle">Chronicle</a>
-  <a href="/self-improve">Improve</a>
-  <a href="/knowledge">Knowledge</a>
-  <a href="/evolution">Evolution</a>
-  <a href="/network">Network</a>
-  <a href="/status">Status</a>
-</nav>
-
-<h1>Life Chronicle</h1>
-<p class="subtitle">PipeMind's living autobiography - tracking growth day by day.</p>
-
-<div class="stat-row" id="statsRow"></div>
-
-<div class="card">
-  <h2 style=margin-bottom:12px>Growth Chart (30 days)</h2>
-  <canvas id="growthChart"></canvas>
-</div>
-
-<div class="card">
-  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
-    <span>Recent Narrative</span>
-    <button class="btn btn-secondary" onclick="generateNarrative()">Generate</button>
-  </h2>
-  <div id="narrativeBox" class="narrative-box">Loading...</div>
-</div>
-
-<div class="card">
-  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
-    <span>Milestones</span>
-    <span id="milestoneCount" style=color:#484f58;font-size:13px></span>
-  </h2>
-  <div id="milestoneList"></div>
-</div>
-
-<script>
-async function load() {
-  const s = await fetch('/api/chronicle/summary').then(r=>r.json());
-  const stats = s.current || {};
-  document.getElementById('statsRow').innerHTML = `
-    <div class=stat><div class=num>` + (s.age_days||0) + `</div><div class=label>Days Old</div></div>
-    <div class=stat class=growth><div class=num style=color:#7ee787>+` + (s.growth?.modules_gained||0) + `</div><div class=label>Modules Gained</div></div>
-    <div class=stat><div class=num>` + (stats.modules||0) + `</div><div class=label>Modules</div></div>
-    <div class=stat><div class=num>` + (stats.skills||0) + `</div><div class=label>Skills</div></div>
-    <div class=stat><div class=num>` + (stats.knowledge||0) + `</div><div class=label>Knowledge</div></div>
-    <div class=stat><div class=num>` + (s.milestones||0) + `</div><div class=label>Milestones</div></div>
-  `;
-
-  // Growth chart
-  const g = await fetch('/api/chronicle/growth?days=30').then(r=>r.json());
-  if(g.dates && g.dates.length) {
-    const canvas = document.getElementById('growthChart');
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.parentElement.offsetWidth || 900;
-    const h = canvas.height = 250;
-    const pad = {l:50, r:20, t:20, b:40};
-    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
-
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = '#484f58'; ctx.font = '11px sans-serif';
-
-    // Draw knowledge chart
-    const vals = g.knowledge || [];
-    const max = Math.max(...vals, 1);
-    if(vals.length > 1) {
-      ctx.strokeStyle = '#238636'; ctx.lineWidth = 2; ctx.beginPath();
-      vals.forEach((v,i) => {
-        const x = pad.l + (i/(vals.length-1))*cw;
-        const y = pad.t + ch - (v/max)*ch;
-        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      });
-      ctx.stroke();
-    }
-
-    // X axis labels
-    g.dates.forEach((d,i) => {
-      if(i % Math.max(1, Math.floor(g.dates.length/7)) === 0) {
-        ctx.fillText(d, pad.l + (i/(vals.length-1))*cw - 15, h - 10);
-      }
-    });
-
-    // Y axis
-    ctx.fillText('0', 5, pad.t + ch);
-    ctx.fillText(max, 5, pad.t + 5);
-    ctx.fillStyle = '#8b949e'; ctx.font = '10px sans-serif';
-    ctx.fillText('Knowledge growth over time', pad.l, 12);
-  }
-
-  // Milestones
-  const m = await fetch('/api/chronicle/milestones').then(r=>r.json());
-  document.getElementById('milestoneCount').textContent = '(' + m.length + ')';
-  document.getElementById('milestoneList').innerHTML = m.slice(-15).reverse().map(ms =>
-    '<div class=milestone-item>' +
-    '<span class=milestone-date>' + (ms.date||'').slice(5) + '</span>' +
-    '<span class="milestone-cat cat-' + (ms.category||'milestone') + '">' + (ms.category||'milestone') + '</span>' +
-    '<span>' + ms.title + '</span></div>'
-  ).join('') || '<div style=color:#484f58;text-align:center;padding:20px>No milestones yet</div>';
-
-  // Narrative
-  const n = await fetch('/api/chronicle/narrative').then(r=>r.text());
-  document.getElementById('narrativeBox').textContent = n || '(no narrative yet)';
-}
-
-async function generateNarrative() {
-  const b = document.getElementById('narrativeBox');
-  b.textContent = 'Generating...';
-  const r = await fetch('/api/chronicle/narrative/generate');
-  const text = await r.text();
-  b.textContent = text || '(generation failed)';
-}
-
-load();
-</script>
-</body>
-</html>"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "chronicle.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 
 @app.route("/api/chronicle/snapshot", methods=["POST"])
@@ -770,104 +508,11 @@ def api_chronicle_review():
 @app.route("/immune")
 def immune_page():
     """免疫系统面板"""
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PipeMind Immune</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
-nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
-nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
-nav a:hover{background:#1f2937}
-h1{color:#f0f6fc;margin-bottom:8px}
-.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
-.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:100px;flex:1;text-align:center}
-.stat .num{font-size:28px;font-weight:bold;color:#58a6ff}
-.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
-.log-item{padding:8px 0;border-bottom:1px solid #21262d;font-size:13px;display:flex;gap:8px}
-.log-time{color:#484f58;font-size:11px;min-width:55px}
-.log-kind{padding:2px 6px;border-radius:6px;font-size:10px;font-weight:bold;min-width:70px;text-align:center}
-.health-alert{background:#da3633;color:#fff}
-.diagnosis{background:#1f6feb;color:#fff}
-.healing{background:#d29922;color:#000}
-.healed{background:#238636;color:#fff}
-.quarantine{background:#8b5cf6;color:#fff}
-.q-item{padding:12px;margin:8px 0;background:#0d1117;border:1px solid #30363d;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
-.q-name{font-size:14px;color:#f0f6fc}
-.q-detail{font-size:12px;color:#8b949e}
-</style>
-</head>
-<body>
-<nav>
-  <a href="/">Dashboard</a><a href="/chat">Chat</a>
-  <a href="/immune">Immune</a>
-  <a href="/chronicle">Chronicle</a>
-  <a href="/self-improve">Improve</a>
-  <a href="/status">Status</a>
-</nav>
-
-<h1>Immune System</h1>
-<p class="subtitle">Self-monitoring and self-healing for all PipeMind modules.</p>
-
-<div class="stat-row" id="statsRow"></div>
-
-<div class="card" id="quarantineCard" style="display:none">
-  <h2 style=margin-bottom:12px>Quarantined Modules</h2>
-  <div id="quarantineList"></div>
-</div>
-
-<div class="card">
-  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
-    <span>Event Log</span>
-    <span id="logCount" style=color:#484f58;font-size:13px></span>
-  </h2>
-  <div id="logContainer"></div>
-</div>
-
-<script>
-async function load() {
-  // Module stats
-  const modules = await fetch('/api/status/modules').then(r=>r.json());
-  const total = modules.length;
-  const running = modules.filter(m => m.status === 'running').length;
-  const errored = modules.filter(m => m.errors > 0).length;
-  document.getElementById('statsRow').innerHTML =
-    '<div class=stat><div class=num>' + total + '</div><div class=label>Total Modules</div></div>' +
-    '<div class=stat><div class=num style=color:#7ee787>' + running + '</div><div class=label>Healthy</div></div>' +
-    '<div class=stat><div class=num style=color:#f85149>' + errored + '</div><div class=label>Errored</div></div>';
-
-  // Logs
-  const logs = await fetch('/api/immune/logs').then(r=>r.json());
-  document.getElementById('logCount').textContent = logs.length + ' events';
-  document.getElementById('logContainer').innerHTML = logs.slice(-20).reverse().map(l =>
-    '<div class=log-item>' +
-    '<span class=log-time>' + (l.time||'').slice(11,19) + '</span>' +
-    '<span class="log-kind ' + (l.kind||'info') + '">' + (l.kind||'?') + '</span>' +
-    '<span class=log-msg>' + (l.message||'') + '</span></div>'
-  ).join('') || '<div style=color:#484f58;text-align:center;padding:20px>No events</div>';
-
-  // Quarantine
-  const q = await fetch('/api/immune/quarantine').then(r=>r.json());
-  const keys = Object.keys(q);
-  if(keys.length) {
-    document.getElementById('quarantineCard').style.display = 'block';
-    document.getElementById('quarantineList').innerHTML = keys.map(k =>
-      '<div class=q-item><div><div class=q-name>' + k + '</div><div class=q-detail>Failures: ' +
-      q[k].failures + ' | Since: ' + (q[k].since||'').slice(0,16) + '</div></div></div>'
-    ).join('');
-  }
-}
-
-load();
-setInterval(load, 10000);
-</script>
-</body>
-</html>"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "immune.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 
 @app.route("/api/immune/logs")
@@ -902,10 +547,11 @@ def api_immune_health():
 @app.route("/home")
 def home_page_legacy():
     """原有的家园页面（保留链接）"""
-    return """
-    <html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=/network"></head>
-    <body><p>家园系统已升级为 <a href="/network">AI Evolution Network</a>。</p></body></html>
-    """
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "home.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 @app.route("/api/home/scan")
 def api_home_scan():
@@ -1774,75 +1420,11 @@ def api_decisions_cycle():
 @app.route("/status")
 def status_page():
     """系统状态面板 — 所有子系统一览"""
-    try:
-        from pipemind_core import list_modules, module_stats, get_recent_logs, PIPEMIND_DIR
-        modules = list_modules()
-        stats = module_stats()
-        logs = get_recent_logs(limit=30)
-    except Exception:
-        modules = []
-        stats = {"total": 0, "running": 0, "errored": 0}
-        logs = []
-
-    mod_rows = "\n".join(
-        f"<tr><td>{m.get('name','?')}</td>"
-        f"<td><span class='status-{m['status']}'>{'🟢' if m['status']=='running' else '🔴' if m['status']=='error' else '⚪'}</span></td>"
-        f"<td>{m.get('started_at','—')[:19] if m.get('started_at') else '—'}</td>"
-        f"<td>{m.get('errors',0)}</td></tr>"
-        for m in modules
-    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No modules registered</td></tr>"
-
-    log_rows = "\n".join(
-        f"<tr><td>{l.get('time','?')[11:19]}</td>"
-        f"<td><span class='level-{l.get('level','info')}'>{l.get('level','?')}</span></td>"
-        f"<td>{l.get('module','?')}</td>"
-        f"<td>{l.get('message','')[:60]}</td></tr>"
-        for l in logs
-    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No logs yet</td></tr>"
-
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Status</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
-.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:80px;text-align:center}}
-.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
-.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}}
-th{{color:#8b949e;font-size:11px}}
-.status-running{{color:#7ee787}} .status-error{{color:#f85149}} .status-stopped{{color:#484f58}}
-.level-error{{color:#f85149;font-weight:bold}} .level-warn{{color:#d29922}} .level-info{{color:#8b949e}}
-</style></head><body>
-<nav>
-  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/status">📊 Status</a>
-  <a href="/memory">🧠 Memory</a><a href="/evolution">🧬 Evolution</a>
-  <a href="/decisions">🤖 Decisions</a><a href="/learn">📚 Learn</a>
-  <a href="/yixin">🌉 Yixin</a>
-</nav>
-<h1>📊 System Status</h1>
-
-<div class="stat-row">
-  <div class="stat"><div class="num">{stats.get('total',0)}</div><div class="label">Modules</div></div>
-  <div class="stat"><div class="num" style="color:#7ee787">{stats.get('running',0)}</div><div class="label">Running</div></div>
-  <div class="stat"><div class="num" style="color:#f85149">{stats.get('errored',0)}</div><div class="label">Errored</div></div>
-</div>
-
-<div class="card">
-  <h2>🧩 Module Registry</h2>
-  <table><tr><th>Module</th><th>Status</th><th>Started</th><th>Errors</th></tr>{mod_rows}</table>
-</div>
-
-<div class="card">
-  <h2>📋 Live Logs</h2>
-  <table><tr><th>Time</th><th>Level</th><th>Module</th><th>Message</th></tr>{log_rows}</table>
-</div>
-</body></html>"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "status.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Page not found"
 
 
 @app.route("/api/status/modules")

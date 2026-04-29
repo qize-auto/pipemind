@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Immune</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:100px;flex:1;text-align:center}
+.stat .num{font-size:28px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+.log-item{padding:8px 0;border-bottom:1px solid #21262d;font-size:13px;display:flex;gap:8px}
+.log-time{color:#484f58;font-size:11px;min-width:55px}
+.log-kind{padding:2px 6px;border-radius:6px;font-size:10px;font-weight:bold;min-width:70px;text-align:center}
+.health-alert{background:#da3633;color:#fff}
+.diagnosis{background:#1f6feb;color:#fff}
+.healing{background:#d29922;color:#000}
+.healed{background:#238636;color:#fff}
+.quarantine{background:#8b5cf6;color:#fff}
+.q-item{padding:12px;margin:8px 0;background:#0d1117;border:1px solid #30363d;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+.q-name{font-size:14px;color:#f0f6fc}
+.q-detail{font-size:12px;color:#8b949e}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Dashboard</a><a href="/chat">Chat</a>
+  <a href="/immune">Immune</a>
+  <a href="/chronicle">Chronicle</a>
+  <a href="/self-improve">Improve</a>
+  <a href="/status">Status</a>
+</nav>
+
+<h1>Immune System</h1>
+<p class="subtitle">Self-monitoring and self-healing for all PipeMind modules.</p>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card" id="quarantineCard" style="display:none">
+  <h2 style=margin-bottom:12px>Quarantined Modules</h2>
+  <div id="quarantineList"></div>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
+    <span>Event Log</span>
+    <span id="logCount" style=color:#484f58;font-size:13px></span>
+  </h2>
+  <div id="logContainer"></div>
+</div>
+
+<script>
+async function load() {
+  // Module stats
+  const modules = await fetch('/api/status/modules').then(r=>r.json());
+  const total = modules.length;
+  const running = modules.filter(m => m.status === 'running').length;
+  const errored = modules.filter(m => m.errors > 0).length;
+  document.getElementById('statsRow').innerHTML =
+    '<div class=stat><div class=num>' + total + '</div><div class=label>Total Modules</div></div>' +
+    '<div class=stat><div class=num style=color:#7ee787>' + running + '</div><div class=label>Healthy</div></div>' +
+    '<div class=stat><div class=num style=color:#f85149>' + errored + '</div><div class=label>Errored</div></div>';
+
+  // Logs
+  const logs = await fetch('/api/immune/logs').then(r=>r.json());
+  document.getElementById('logCount').textContent = logs.length + ' events';
+  document.getElementById('logContainer').innerHTML = logs.slice(-20).reverse().map(l =>
+    '<div class=log-item>' +
+    '<span class=log-time>' + (l.time||'').slice(11,19) + '</span>' +
+    '<span class="log-kind ' + (l.kind||'info') + '">' + (l.kind||'?') + '</span>' +
+    '<span class=log-msg>' + (l.message||'') + '</span></div>'
+  ).join('') || '<div style=color:#484f58;text-align:center;padding:20px>No events</div>';
+
+  // Quarantine
+  const q = await fetch('/api/immune/quarantine').then(r=>r.json());
+  const keys = Object.keys(q);
+  if(keys.length) {
+    document.getElementById('quarantineCard').style.display = 'block';
+    document.getElementById('quarantineList').innerHTML = keys.map(k =>
+      '<div class=q-item><div><div class=q-name>' + k + '</div><div class=q-detail>Failures: ' +
+      q[k].failures + ' | Since: ' + (q[k].since||'').slice(0,16) + '</div></div></div>'
+    ).join('');
+  }
+}
+
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>

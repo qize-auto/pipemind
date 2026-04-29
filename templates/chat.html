@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>PipeMind Chat</title>
+<style>body{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:800px;margin:0 auto}
+nav{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}
+nav a{color:#58a6ff;text-decoration:none;padding:8px 16px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc}
+.chat-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:15px;height:400px;overflow-y:auto;margin-bottom:10px}
+.msg{margin-bottom:10px;line-height:1.5}
+.user{color:#58a6ff}
+.pm{color:#7ee787}
+.input-row{display:flex;gap:10px}
+.input-row input{flex:1;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9}
+.input-row button{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}
+</style></head>
+<body>
+<nav><a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a></nav>
+<h1>💬 Chat with PipeMind</h1>
+<div id="chat" class="chat-box"></div>
+<div class="input-row">
+  <input id="input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')send()">
+  <button onclick="send()">Send</button>
+</div>
+<script>
+const chat = document.getElementById('chat');
+function addMsg(role, text) {
+  const d = document.createElement('div'); d.className = 'msg';
+  d.innerHTML = `<strong class="${role}">${role === 'user' ? '🧑' : '🤖'}</strong> ${text}`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function send() {
+  const input = document.getElementById('input');
+  const text = input.value.trim(); if(!text) return;
+  addMsg('user', text); input.value = '';
+  fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})})
+  .then(r=>r.json()).then(d => {
+    if(d.response) addMsg('pm', d.response);
+    if(d.error) addMsg('pm', '❌ ' + d.error);
+  }).catch(e => addMsg('pm', '❌ ' + e));
+}
+</script>
+</body>
+</html>

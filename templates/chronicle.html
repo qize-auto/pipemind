@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Chronicle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:100px;flex:1;text-align:center}
+.stat .num{font-size:28px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+.growth .num{color:#7ee787}
+.milestone-item{padding:10px 0;border-bottom:1px solid #21262d;font-size:14px;display:flex;gap:12px}
+.milestone-date{color:#484f58;font-size:12px;min-width:80px}
+.milestone-cat{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;color:#fff;min-width:60px;text-align:center}
+.cat-evolution{background:#238636} .cat-learning{background:#1f6feb} .cat-improvement{background:#d29922} .cat-milestone{background:#8b5cf6}
+.narrative-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:20px;font-size:15px;line-height:1.8;color:#e6edf3}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
+.btn-primary{background:#238636;color:#fff}
+.btn-secondary{background:#21262d;color:#c9d1d9}
+canvas{width:100%;height:250px;background:#0d1117;border:1px solid #30363d;border-radius:8px;margin-top:12px}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Dashboard</a><a href="/chat">Chat</a>
+  <a href="/chronicle">Chronicle</a>
+  <a href="/self-improve">Improve</a>
+  <a href="/knowledge">Knowledge</a>
+  <a href="/evolution">Evolution</a>
+  <a href="/network">Network</a>
+  <a href="/status">Status</a>
+</nav>
+
+<h1>Life Chronicle</h1>
+<p class="subtitle">PipeMind's living autobiography - tracking growth day by day.</p>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px>Growth Chart (30 days)</h2>
+  <canvas id="growthChart"></canvas>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
+    <span>Recent Narrative</span>
+    <button class="btn btn-secondary" onclick="generateNarrative()">Generate</button>
+  </h2>
+  <div id="narrativeBox" class="narrative-box">Loading...</div>
+</div>
+
+<div class="card">
+  <h2 style=margin-bottom:12px;display:flex;justify-content:space-between">
+    <span>Milestones</span>
+    <span id="milestoneCount" style=color:#484f58;font-size:13px></span>
+  </h2>
+  <div id="milestoneList"></div>
+</div>
+
+<script>
+async function load() {
+  const s = await fetch('/api/chronicle/summary').then(r=>r.json());
+  const stats = s.current || {};
+  document.getElementById('statsRow').innerHTML = `
+    <div class=stat><div class=num>` + (s.age_days||0) + `</div><div class=label>Days Old</div></div>
+    <div class=stat class=growth><div class=num style=color:#7ee787>+` + (s.growth?.modules_gained||0) + `</div><div class=label>Modules Gained</div></div>
+    <div class=stat><div class=num>` + (stats.modules||0) + `</div><div class=label>Modules</div></div>
+    <div class=stat><div class=num>` + (stats.skills||0) + `</div><div class=label>Skills</div></div>
+    <div class=stat><div class=num>` + (stats.knowledge||0) + `</div><div class=label>Knowledge</div></div>
+    <div class=stat><div class=num>` + (s.milestones||0) + `</div><div class=label>Milestones</div></div>
+  `;
+
+  // Growth chart
+  const g = await fetch('/api/chronicle/growth?days=30').then(r=>r.json());
+  if(g.dates && g.dates.length) {
+    const canvas = document.getElementById('growthChart');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.parentElement.offsetWidth || 900;
+    const h = canvas.height = 250;
+    const pad = {l:50, r:20, t:20, b:40};
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#484f58'; ctx.font = '11px sans-serif';
+
+    // Draw knowledge chart
+    const vals = g.knowledge || [];
+    const max = Math.max(...vals, 1);
+    if(vals.length > 1) {
+      ctx.strokeStyle = '#238636'; ctx.lineWidth = 2; ctx.beginPath();
+      vals.forEach((v,i) => {
+        const x = pad.l + (i/(vals.length-1))*cw;
+        const y = pad.t + ch - (v/max)*ch;
+        i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+    }
+
+    // X axis labels
+    g.dates.forEach((d,i) => {
+      if(i % Math.max(1, Math.floor(g.dates.length/7)) === 0) {
+        ctx.fillText(d, pad.l + (i/(vals.length-1))*cw - 15, h - 10);
+      }
+    });
+
+    // Y axis
+    ctx.fillText('0', 5, pad.t + ch);
+    ctx.fillText(max, 5, pad.t + 5);
+    ctx.fillStyle = '#8b949e'; ctx.font = '10px sans-serif';
+    ctx.fillText('Knowledge growth over time', pad.l, 12);
+  }
+
+  // Milestones
+  const m = await fetch('/api/chronicle/milestones').then(r=>r.json());
+  document.getElementById('milestoneCount').textContent = '(' + m.length + ')';
+  document.getElementById('milestoneList').innerHTML = m.slice(-15).reverse().map(ms =>
+    '<div class=milestone-item>' +
+    '<span class=milestone-date>' + (ms.date||'').slice(5) + '</span>' +
+    '<span class="milestone-cat cat-' + (ms.category||'milestone') + '">' + (ms.category||'milestone') + '</span>' +
+    '<span>' + ms.title + '</span></div>'
+  ).join('') || '<div style=color:#484f58;text-align:center;padding:20px>No milestones yet</div>';
+
+  // Narrative
+  const n = await fetch('/api/chronicle/narrative').then(r=>r.text());
+  document.getElementById('narrativeBox').textContent = n || '(no narrative yet)';
+}
+
+async function generateNarrative() {
+  const b = document.getElementById('narrativeBox');
+  b.textContent = 'Generating...';
+  const r = await fetch('/api/chronicle/narrative/generate');
+  const text = await r.text();
+  b.textContent = text || '(generation failed)';
+}
+
+load();
+</script>
+</body>
+</html>

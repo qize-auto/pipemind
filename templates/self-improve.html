@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Self-Improve</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
+.btn-primary{background:#238636;color:#fff}
+.btn-secondary{background:#21262d;color:#c9d1d9}
+pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-size:13px;overflow:auto;max-height:500px;line-height:1.6}
+.suggestion{border-left:3px solid #238636;padding:12px;margin:8px 0;background:#0d1117;border-radius:0 8px 8px 0}
+.suggestion .sev{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;color:#fff;margin-right:8px}
+.sev-critical{background:#da3633} .sev-major{background:#d29922} .sev-minor{background:#21262d}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Dashboard</a><a href="/chat">Chat</a>
+  <a href="/self-improve">Improve</a>
+  <a href="/network">Network</a>
+  <a href="/knowledge">Knowledge</a>
+  <a href="/status">Status</a>
+  <a href="/evolution">Evolution</a>
+</nav>
+<h1>AI Self-Improvement</h1>
+<p class="subtitle">PipeMind uses its own AI to analyze and improve itself. All changes are reviewed before applying.</p>
+
+<div class="card">
+  <h2 style="margin-bottom:12px">Run Improvement Cycle</h2>
+  <div>
+    <button class="btn btn-primary" onclick="runCycle(true)">Preview (Dry Run)</button>
+    <button class="btn btn-secondary" onclick="runCycle(false)">Apply Changes</button>
+    <span id="result" style="margin-left:10px;color:#8b949e;font-size:13px"></span>
+  </div>
+</div>
+
+<div id="reportContainer"></div>
+
+<div class="card">
+  <h2 style="margin-bottom:12px">Previous Reports</h2>
+  <pre id="logContainer">Loading...</pre>
+</div>
+
+<script>
+async function runCycle(dryRun) {
+  const r = document.getElementById('result');
+  r.textContent = 'Running AI self-improvement...';
+  const resp = await fetch('/api/self-improve/run', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({dry_run: dryRun})
+  });
+  const data = await resp.json();
+  const c = document.getElementById('reportContainer');
+  c.innerHTML = '<div class=card><h2 style=margin-bottom:12px>' +
+    (dryRun ? 'Preview Report (Dry Run)' : 'Applied Changes') +
+    '</h2><pre>' + escapeHtml(data.report || 'No suggestions') + '</pre></div>';
+  r.textContent = 'Done - ' + (data.total || 0) + ' suggestions';
+  loadLogs();
+}
+
+function escapeHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadLogs() {
+  try {
+    const logs = await fetch('/api/self-improve/logs').then(r=>r.json());
+    document.getElementById('logContainer').textContent = JSON.stringify(logs.slice(-3), null, 2);
+  } catch(e) {}
+}
+loadLogs();
+</script>
+</body>
+</html>

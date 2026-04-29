@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc} h2{color:#f0f6fc;font-size:16px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:16px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:14px;min-width:80px;flex:1;text-align:center}
+.stat .num{font-size:24px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}
+th{color:#8b949e;font-size:11px}
+.status-running{color:#7ee787} .status-error{color:#f85149} .status-stopped{color:#484f58}
+.level-error{color:#f85149;font-weight:bold} .level-warn{color:#d29922} .level-info{color:#8b949e}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Dashboard</a><a href="/chat">Chat</a>
+  <a href="/status">Status</a>
+  <a href="/chronicle">Chronicle</a>
+  <a href="/immune">Immune</a>
+  <a href="/network">Network</a>
+</nav>
+
+<h1>System Status</h1>
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <h2 style="margin-bottom:12px">Module Registry</h2>
+  <table><tr><th>Module</th><th>Status</th><th>Started</th><th>Errors</th></tr>
+    <tbody id="moduleTable"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-bottom:12px">Live Logs</h2>
+  <table><tr><th>Time</th><th>Level</th><th>Module</th><th>Message</th></tr>
+    <tbody id="logTable"></tbody>
+  </table>
+</div>
+
+<script>
+async function load() {
+  // Stats
+  const s = await fetch('/api/status/modules').then(r=>r.json());
+  const running = s.filter(m => m.status === 'running').length;
+  const errored = s.filter(m => m.errors > 0).length;
+  document.getElementById('statsRow').innerHTML =
+    '<div class=stat><div class=num>' + s.length + '</div><div class=label>Modules</div></div>' +
+    '<div class=stat><div class=num style=color:#7ee787>' + running + '</div><div class=label>Running</div></div>' +
+    '<div class=stat><div class=num style=color:#f85149>' + errored + '</div><div class=label>Errored</div></div>';
+
+  document.getElementById('moduleTable').innerHTML = s.map(m =>
+    '<tr><td>' + m.name + '</td>' +
+    '<td><span class="status-' + m.status + '">' + (m.status==='running'?'Online':'Offline') + '</span></td>' +
+    '<td>' + (m.started_at||'').slice(0,16) + '</td>' +
+    '<td>' + (m.errors||0) + '</td></tr>'
+  ).join('');
+
+  // Logs
+  const logs = await fetch('/api/status/logs').then(r=>r.json());
+  document.getElementById('logTable').innerHTML = logs.slice(-20).reverse().map(l =>
+    '<tr><td>' + (l.time||'').slice(11,19) + '</td>' +
+    '<td class="level-' + l.level + '">' + l.level + '</td>' +
+    '<td>' + l.module + '</td>' +
+    '<td>' + escapeHtml((l.message||'').slice(0,60)) + '</td></tr>'
+  ).join('');
+}
+function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+load();
+</script>
+</body>
+</html>

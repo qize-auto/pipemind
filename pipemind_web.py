@@ -5,7 +5,7 @@
   python pipemind_web.py --port 8080  # 自定义端口
 """
 
-import json, os, datetime, threading, sys, webbrowser
+import json, os, datetime, threading, sys, webbrowser, time
 
 PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -33,29 +33,35 @@ INDEX_HTML = """<!DOCTYPE html>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
-nav{display:flex;gap:10px;margin-bottom:30px;border-bottom:1px solid #30363d;padding-bottom:10px}
-nav a{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:14px}
 nav a:hover{background:#1f2937}
 nav a.active{background:#1f6feb;color:#fff}
 h1{color:#f0f6fc;margin-bottom:20px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}
-.card h2{color:#f0f6fc;font-size:16px;margin-bottom:10px}
-.stat-row{display:flex;gap:20px;flex-wrap:wrap}
-.stat{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:15px;min-width:120px;text-align:center}
-.stat .num{font-size:28px;color:#58a6ff;font-weight:bold}
-.stat .label{font-size:12px;color:#8b949e;margin-top:4px}
-pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:15px;overflow:auto;max-height:400px;font-size:13px}
-.chat-box{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:15px;height:300px;overflow-y:auto;margin-bottom:10px;font-size:14px}
-.chat-msg{margin-bottom:8px;line-height:1.5}
-.chat-user{color:#58a6ff}
-.chat-pm{color:#7ee787}
-.chat-input{display:flex;gap:10px}
-.chat-input input{flex:1;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px}
-.chat-input button{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}
-.chat-input button:hover{background:#2ea043}
-.log-line{padding:2px 0;font-size:13px;color:#8b949e}
-.log-line .time{color:#484f58}
-.log-line .from{color:#58a6ff}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:16px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:14px;min-width:110px;flex:1;text-align:center}
+.stat .num{font-size:26px;color:#58a6ff;font-weight:bold}
+.stat .label{font-size:11px;color:#8b949e;margin-top:3px}
+pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;overflow:auto;max-height:300px;font-size:13px}
+.log-entry{padding:4px 0;font-size:13px;border-bottom:1px solid #21262d}
+.log-entry:last-child{border-bottom:none}
+.log-time{color:#484f58;margin-right:8px}
+.log-mod{color:#58a6ff;margin-right:8px}
+.log-msg{color:#c9d1d9}
+.log-error .log-msg{color:#f85149}
+.log-warn .log-msg{color:#d29922}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:bold}
+.badge-green{background:#238636;color:#fff}
+.badge-red{background:#da3633;color:#fff}
+.badge-yellow{background:#d29922;color:#000}
+.badge-gray{background:#21262d;color:#8b949e}
+.quick-btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin:4px;background:#21262d;color:#c9d1d9}
+.quick-btn:hover{background:#30363d}
+.quick-btn.primary{background:#238636;color:#fff}
+.quick-btn.primary:hover{background:#2ea043}
+.quick-btn.danger{background:#da3633;color:#fff}
+@media(max-width:600px){.stat{min-width:80px}.stat .num{font-size:20px}}
 </style>
 </head>
 <body>
@@ -63,40 +69,117 @@ pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:15px;o
 <nav>
   <a href="/" class="active">🏠 Dashboard</a>
   <a href="/chat">💬 Chat</a>
+  <a href="/status">📊 Status</a>
   <a href="/memory">🧠 Memory</a>
-  <a href="/skills">📚 Skills</a>
+  <a href="/evolution">🧬 Evolution</a>
+  <a href="/decisions">🤖 Decisions</a>
+  <a href="/learn">📚 Learn</a>
+  <a href="/yixin">🌉 Yixin</a>
   <a href="/home">🏡 Home</a>
-  <a href="/providers">📡 Providers</a>
 </nav>
 
 <div id="root">
-<h1>🏠 PipeMind Console</h1>
-<div class="stat-row">
-  <div class="stat"><div class="num">{{stats.modules}}</div><div class="label">Modules</div></div>
-  <div class="stat"><div class="num">{{stats.tools}}</div><div class="label">Tools</div></div>
-  <div class="stat"><div class="num">{{stats.skills}}</div><div class="label">Skills</div></div>
-  <div class="stat"><div class="num">{{stats.home_open}}</div><div class="label">Home Open</div></div>
+<h1>🏠 PipeMind Command Center</h1>
+
+<!-- Status Bar -->
+<div id="statusBar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+<!-- Quick Stats -->
+<div class="stat-row" id="statsRow" style="margin-bottom:16px">
+  <div class="stat"><div class="num">—</div><div class="label">Conv Today</div></div>
+  <div class="stat"><div class="num">—</div><div class="label">Knowledge</div></div>
+  <div class="stat"><div class="num">—</div><div class="label">Modules</div></div>
+  <div class="stat"><div class="num">—</div><div class="label">Uptime</div></div>
+  <div class="stat"><div class="num">—</div><div class="label">Errors</div></div>
 </div>
 
+<!-- Quick Actions -->
 <div class="card">
-  <h2>📡 Providers</h2>
-  <pre>{{providers}}</pre>
+  <h2 style="margin-bottom:10px;font-size:15px">🎮 Quick Actions</h2>
+  <div>
+    <button class="quick-btn primary" onclick="openConsole()">🖥 Open Console</button>
+    <button class="quick-btn" onclick="quickDoctor()">🔍 Run Doctor</button>
+    <button class="quick-btn" onclick="quickTune()">🔧 Auto-Tune</button>
+    <button class="quick-btn" onclick="quickLearn()">📚 Learn Now</button>
+    <span id="quickResult" style="margin-left:10px;color:#8b949e;font-size:13px"></span>
+  </div>
 </div>
 
+<!-- Live Logs -->
 <div class="card">
-  <h2>🧠 Active Nudges</h2>
-  <pre>{{nudges}}</pre>
+  <h2 style="margin-bottom:10px;font-size:15px;display:flex;justify-content:space-between">
+    <span>📋 Live Log</span>
+    <span id="logCount" style="color:#484f58;font-size:12px">0 entries</span>
+  </h2>
+  <div id="logContainer" style="max-height:300px;overflow-y:auto;font-size:13px"></div>
 </div>
 </div>
 
 <script>
-setInterval(() => {
-  fetch('/api/stats').then(r=>r.json()).then(d=>{
-    document.querySelector('.stat:nth-child(1) .num').textContent = d.modules;
-    document.querySelector('.stat:nth-child(2) .num').textContent = d.tools;
-    document.querySelector('.stat:nth-child(3) .num').textContent = d.skills;
-  }).catch(()=>{});
-}, 5000);
+const API = (path) => fetch(path).then(r=>r.json());
+
+async function refresh() {
+  try {
+    // Stats
+    const stats = await API('/api/stats');
+    const s = document.getElementById('statsRow').children;
+    s[0].innerHTML = '<div class="num">'+(stats.conv_today||0)+'</div><div class="label">Conv Today</div>';
+    s[1].innerHTML = '<div class="num">'+(stats.knowledge||0)+'</div><div class="label">Knowledge</div>';
+    s[2].innerHTML = '<div class="num">'+(stats.modules||0)+'</div><div class="label">Modules</div>';
+    s[3].innerHTML = '<div class="num">'+(stats.uptime||'—')+'</div><div class="label">Uptime</div>';
+    s[4].innerHTML = '<div class="num" style="color:'+(stats.errors>0?'#f85149':'#58a6ff')+'">'+(stats.errors||0)+'</div><div class="label">Errors</div>';
+
+    // Status bar
+    let bar = '';
+    bar += '<span class="badge '+(stats.daemon?'badge-green':'badge-red')+'">🖥 '+(stats.daemon?'Daemon Online':'Daemon Offline')+'</span>';
+    bar += '<span class="badge '+(stats.yixin_connected?'badge-green':'badge-gray')+'">🌉 '+(stats.model||'—')+'</span>';
+    bar += '<span class="badge '+(stats.trend==='improving'?'badge-green':stats.trend==='degrading'?'badge-red':'badge-yellow')+'">📈 '+stats.trend+'</span>';
+    document.getElementById('statusBar').innerHTML = bar;
+  } catch(e) { /* ignore on first load */ }
+}
+
+async function refreshLogs() {
+  try {
+    const logs = await API('/api/status/logs?limit=15');
+    document.getElementById('logCount').textContent = logs.length + ' entries';
+    const c = document.getElementById('logContainer');
+    c.innerHTML = logs.slice(-15).reverse().map(l =>
+      '<div class="log-entry'+(l.level==='error'?' log-error':l.level==='warn'?' log-warn':'')+'">'+
+      '<span class="log-time">'+(l.time||'').slice(11,19)+'</span>'+
+      '<span class="log-mod">['+l.module+']</span>'+
+      '<span class="log-msg">'+escapeHtml((l.message||'').slice(0,80))+'</span></div>'
+    ).join('');
+  } catch(e) {}
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function openConsole() { window.open('/chat','_blank'); }
+
+function quickDoctor() {
+  const r = document.getElementById('quickResult'); r.textContent = '🔍 Running...';
+  API('/api/doctor/run').then(d => { r.textContent = '✅ Done'; }).catch(e => r.textContent = '❌ '+e);
+}
+
+function quickTune() {
+  const r = document.getElementById('quickResult'); r.textContent = '🔧 Tuning...';
+  fetch('/api/evolution/tune',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+    .then(r=>r.json()).then(d => { r.textContent = '✅ '+(d.changes?.join('; ')||'No changes'); })
+    .catch(e => r.textContent = '❌ '+e);
+}
+
+function quickLearn() {
+  const r = document.getElementById('quickResult'); r.textContent = '📚 Learning...';
+  fetch('/api/learn/run',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+    .then(r=>r.json()).then(d => { r.textContent = '✅ Learned '+(d.total_learned||0)+' items'; })
+    .catch(e => r.textContent = '❌ '+e);
+}
+
+// Initial load
+refresh(); refreshLogs();
+// Auto refresh
+setInterval(refresh, 10000);
+setInterval(refreshLogs, 5000);
 </script>
 </body>
 </html>"""
@@ -106,67 +189,75 @@ setInterval(() => {
 app = Flask(__name__)
 
 def _get_stats():
-    """获取系统统计"""
+    """获取系统统计（全量）"""
+    result = {
+        "modules": 0, "tools": "?", "skills": "?",
+        "conv_today": 0, "knowledge": 0,
+        "daemon": False, "uptime": "—",
+        "errors": 0, "trend": "stable",
+        "yixin_connected": False, "model": "—",
+    }
+
+    # 模块数
+    result["modules"] = len([f for f in os.listdir(PIPEMIND_DIR)
+                            if f.startswith("pipemind_") and f.endswith(".py")])
+
+    # 性能统计
     try:
-        import pipemind_evolution as evo
-        v = evo.vital_signs()
-        tools = v.get("tools", 0)
-        skills = v.get("skills", "?")
+        import pipemind_self_evolution as se
+        p = se.PerformanceTracker.stats(days=1)
+        result["conv_today"] = p.get("total", 0)
+        result["trend"] = p.get("trend", "stable")
+        # 统计错误模块数
+        try:
+            from pipemind_core import module_stats
+            ms = module_stats()
+            result["errors"] = ms.get("errored", 0)
+        except:
+            pass
     except:
-        tools = "?"
-        skills = "?"
-    
-    modules = len([f for f in os.listdir(PIPEMIND_DIR) if f.startswith("pipemind_") and f.endswith(".py")])
-    
-    home_state = {"open": False}
-    home_file = os.path.join(PIPEMIND_DIR, "memory", "_home_state.json")
-    if os.path.exists(home_file):
+        pass
+
+    # 知识
+    try:
+        import pipemind_memory_evolution as me
+        result["knowledge"] = me.get_stats().get("total", 0)
+    except:
+        pass
+
+    # 守护进程状态
+    pid_file = os.path.join(PIPEMIND_DIR, "memory", "_daemon.pid")
+    if os.path.exists(pid_file):
         try:
-            home_state = json.load(open(home_file))
+            with open(pid_file) as f:
+                info = json.load(f)
+            result["daemon"] = True
+            uptime_sec = time.time() - info.get("started", time.time())
+            h = int(uptime_sec // 3600)
+            m = int((uptime_sec % 3600) // 60)
+            result["uptime"] = f"{h}h{m}m"
         except:
             pass
-    
-    # providers
-    cfg_file = os.path.join(PIPEMIND_DIR, "config.json")
-    providers = []
-    if os.path.exists(cfg_file):
-        try:
-            cfg = json.load(open(cfg_file))
-            providers = cfg.get("providers", [])
-        except:
-            pass
-    
-    # nudges
-    nudge_file = os.path.join(PIPEMIND_DIR, "pipemind_nudge.json")
-    nudges = []
-    if os.path.exists(nudge_file):
-        try:
-            nudges = json.load(open(nudge_file)).get("nudges", [])
-        except:
-            pass
-    
-    return {
-        "modules": modules,
-        "tools": tools,
-        "skills": skills,
-        "providers": len(providers),
-        "home_open": "✅ Open" if home_state.get("open") else "❌ Closed",
-        "home_id": home_state.get("home_id", "?"),
-    }, providers, nudges
+
+    # 弈辛状态
+    try:
+        import pipemind_wsl_bridge as wsl
+        s = wsl.get_monitor().status
+        result["yixin_connected"] = s.get("connected", False)
+        result["model"] = s.get("model", "—")
+    except:
+        pass
+
+    return result
 
 @app.route("/")
 def dashboard():
-    stats, providers, nudges = _get_stats()
-    prov_text = "\n".join(f"  [{i}] {p.get('name','?')} ({p.get('model','?')}) {'✅' if p.get('api_key') else '❌'}" 
-                          for i, p in enumerate(providers)) or "  (none)"
-    nudge_text = "\n".join(f"  · {n.get('lesson','?')[:60]} (expires {n.get('expires','?')[:10]})" 
-                           for n in nudges) or "  (none)"
-    return render_template_string(INDEX_HTML, stats=stats, providers=prov_text, nudges=nudge_text)
+    stats = _get_stats()
+    return render_template_string(INDEX_HTML, stats=stats)
 
 @app.route("/api/stats")
 def api_stats():
-    stats, _, _ = _get_stats()
-    return jsonify(stats)
+    return jsonify(_get_stats())
 
 @app.route("/chat")
 def chat_page():

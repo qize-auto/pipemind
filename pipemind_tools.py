@@ -1,4 +1,7 @@
-"""PipeMind — 进化版工具系统（Windows 原生）"""
+"""PipeMind — 进化版工具系统（Windows 原生）
+
+支持从 tools/ 目录扩展新工具。
+"""
 from pipemind_core import PIPEMIND_DIR, MEM_DIR
 import os, subprocess, json, datetime, glob, sys, re, platform, time
 

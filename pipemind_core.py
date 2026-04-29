@@ -287,3 +287,52 @@ def init():
     register_module("core")
     log.info("PipeMind Core 初始化完成")
     log.info(f"  日志目录: {LOG_DIR}")
+
+    # 确保配置目录存在
+    _ensure_config()
+
+
+# ═══════════════════════════════════════════════
+# 统一配置管理
+# ═══════════════════════════════════════════════
+
+_CONFIG = {}
+_CONFIG_FILE = os.path.join(MEM_DIR, "_core_config.json")
+
+
+def _ensure_config():
+    os.makedirs(MEM_DIR, exist_ok=True)
+    if os.path.exists(_CONFIG_FILE):
+        try:
+            with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
+                _CONFIG.update(json.load(f))
+        except Exception:
+            pass
+
+
+def config_get(key: str, default=None):
+    """获取配置项"""
+    return _CONFIG.get(key, default)
+
+
+def config_set(key: str, value):
+    """设置配置项"""
+    _CONFIG[key] = value
+    try:
+        with open(_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(_CONFIG, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def config_get_all() -> dict:
+    return dict(_CONFIG)
+
+
+def config_delete(key: str):
+    _CONFIG.pop(key, None)
+    try:
+        with open(_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(_CONFIG, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass

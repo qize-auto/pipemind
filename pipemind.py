@@ -654,7 +654,25 @@ def run_interactive():
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="PipeMind — AI Lifeform")
+    parser = argparse.ArgumentParser(
+        description="PipeMind — Windows AI Lifeform",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+子命令:
+  doctor     系统诊断 — 检查所有子系统状态
+  ps         查看运行中的后台线程
+  log        查看最近日志
+  status     生命体征摘要
+
+例子:
+  pipemind doctor             运行完整诊断
+  pipemind ps                 查看后台线程
+  pipemind log --level error  只看错误日志
+  pipemind status             系统状态
+  pipemind --daemon           启动守护进程
+  pipemind --tray             启动托盘
+"""
+    )
     parser.add_argument("query", nargs="*")
     parser.add_argument("--setup", action="store_true", help="首次设置")
     parser.add_argument("--status", action="store_true", help="生命体征")
@@ -663,6 +681,51 @@ def main():
     parser.add_argument("--stop", action="store_true", help="停止守护进程")
     parser.add_argument("--port", type=int, default=9090, help="Web 控制台端口")
     args = parser.parse_args()
+
+    # ── 子命令检测 ──
+    first_arg = args.query[0] if args.query else ""
+
+    # ── doctor 子命令 ──
+    if first_arg == "doctor":
+        try:
+            import pipemind_doctor
+            result = pipemind_doctor.run_diagnostics()
+            print(result)
+        except ImportError:
+            print("❌ pipemind_doctor 模块未找到")
+        return
+
+    # ── ps 子命令 ──
+    if first_arg == "ps":
+        try:
+            import pipemind_daemon as daemon
+            if daemon.is_running():
+                print("  ✅ 守护进程运行中")
+            else:
+                print("  ❌ 守护进程未运行")
+            try:
+                from pipemind_core import list_modules
+                for m in list_modules():
+                    icon = {"running": "🟢", "error": "🔴", "registered": "⚪"}.get(m["status"], "⚪")
+                    print(f"  {icon} {m['name']} ({m['status']})")
+            except:
+                pass
+        except:
+            print("❌ 无法获取进程信息")
+        return
+
+    # ── log 子命令 ──
+    if first_arg == "log":
+        try:
+            from pipemind_core import get_recent_logs
+            level = args.query[1] if len(args.query) > 1 and args.query[1] in ("error", "warn", "info", "debug") else None
+            logs = get_recent_logs(limit=30, level=level)
+            for l in logs[-20:]:
+                icon = {"error": "❌", "warn": "⚠", "info": "·", "debug": "🔍"}.get(l["level"], "·")
+                print(f"  {icon} [{l['module']}] {l['message'][:80]}")
+        except:
+            print("❌ 无法读取日志")
+        return
 
     # ── 守护进程模式 ──
     if args.daemon:

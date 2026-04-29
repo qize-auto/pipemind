@@ -1358,6 +1358,19 @@ def api_status_logs():
         return jsonify({"error": str(e)})
 
 
+# ── 系统诊断 API ─────────────────────────────
+
+@app.route("/api/doctor/run")
+def api_doctor_run():
+    """运行系统诊断"""
+    try:
+        import pipemind_doctor as doc
+        report = doc.run_diagnostics()
+        return jsonify({"report": report})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

@@ -1462,6 +1462,278 @@ def api_doctor_run():
         return jsonify({"error": str(e)})
 
 
+# ── 知识图谱 API ─────────────────────────────
+
+@app.route("/knowledge")
+def knowledge_page():
+    """知识图谱可视化页面"""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Knowledge</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}}
+nav{{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}}
+nav a{{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+nav a.active{{background:#1f6feb;color:#fff}}
+h1{{color:#f0f6fc;margin-bottom:20px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:16px}}
+.stat-row{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:14px;min-width:90px;flex:1;text-align:center}}
+.stat .num{{font-size:24px;font-weight:bold}}
+.stat .label{{font-size:11px;color:#8b949e;margin-top:3px}}
+.fact .num{{color:#238636}} .pattern .num{{color:#1f6feb}} .decision .num{{color:#d29922}}
+canvas{{background:#0d1117;border:1px solid #30363d;border-radius:8px;width:100%;height:400px;cursor:pointer}}
+.search-row{{display:flex;gap:10px;margin-bottom:16px}}
+.search-row input{{flex:1;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px}}
+.search-row button{{padding:10px 20px;background:#238636;border:none;border-radius:6px;color:#fff;cursor:pointer}}
+.filter-btn{{padding:4px 12px;border:1px solid #30363d;border-radius:12px;cursor:pointer;font-size:12px;background:transparent;color:#8b949e;margin:2px}}
+.filter-btn.active{{background:#1f6feb;color:#fff;border-color:#1f6feb}}
+.knowledge-item{{padding:10px;border-bottom:1px solid #21262d;font-size:14px;cursor:pointer}}
+.knowledge-item:hover{{background:#1c2333}}
+.knowledge-item .tag{{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;margin-right:8px;color:#fff}}
+.tag-fact{{background:#238636}} .tag-pattern{{background:#1f6feb}} .tag-decision{{background:#d29922}}
+#tooltip{{position:fixed;background:#1c2333;border:1px solid #30363d;border-radius:8px;padding:12px;font-size:13px;max-width:300px;display:none;z-index:100;pointer-events:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/knowledge">🧠 Knowledge</a>
+  <a href="/status">📊 Status</a><a href="/evolution">🧬 Evolution</a>
+  <a href="/decisions">🤖 Decisions</a><a href="/yixin">🌉 Yixin</a>
+</nav>
+
+<h1>🧠 Knowledge Graph</h1>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="search-row">
+  <input id="searchInput" placeholder="Search knowledge..." onkeydown="if(event.key==='Enter')search()">
+  <button onclick="search()">🔍 Search</button>
+</div>
+
+<div id="filterBar" style="margin-bottom:12px"></div>
+
+<canvas id="graph" width="900" height="400"></canvas>
+<div id="tooltip"></div>
+
+<div class="card" style="margin-top:16px">
+  <h2 style="font-size:15px;margin-bottom:12px">📋 Knowledge Items <span id="itemCount" style="color:#484f58"></span></h2>
+  <div id="knowledgeList"></div>
+</div>
+
+<script>
+const API = (path) => fetch(path).then(r=>r.json());
+let graphData = {{nodes:[], edges:[]}};
+let filteredNodes = [];
+let selectedType = 'all';
+let hoveredNode = null;
+
+// ── Load Graph ──
+async function loadGraph() {{
+  const data = await API('/api/knowledge/graph');
+  graphData = data;
+  renderStats(data.stats);
+  renderFilters(data.stats.by_type);
+  filteredNodes = data.nodes;
+  renderGraph();
+  renderList(data.nodes);
+}}
+
+function renderStats(stats) {{
+  const row = document.getElementById('statsRow');
+  row.innerHTML = `
+    <div class="stat fact"><div class="num">${{stats.by_type?.fact||0}}</div><div class="label">Facts</div></div>
+    <div class="stat pattern"><div class="num">${{stats.by_type?.pattern||0}}</div><div class="label">Patterns</div></div>
+    <div class="stat decision"><div class="num">${{stats.by_type?.decision||0}}</div><div class="label">Decisions</div></div>
+    <div class="stat"><div class="num">${{stats.connections||0}}</div><div class="label">Connections</div></div>
+    <div class="stat"><div class="num">${{stats.total_knowledge||0}}</div><div class="label">Total</div></div>
+  `;
+}}
+
+function renderFilters(byType) {{
+  const bar = document.getElementById('filterBar');
+  let html = '<button class="filter-btn active" onclick="setFilter(\\'all\\')">All</button>';
+  for (const [type, count] of Object.entries(byType||{{}})) {{
+    html += `<button class="filter-btn" onclick="setFilter('${{type}}')">${{type}} (${{count}})</button>`;
+  }}
+  bar.innerHTML = html;
+}}
+
+function setFilter(type) {{
+  selectedType = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent.startsWith(type)));
+  filteredNodes = type === 'all' ? graphData.nodes : graphData.nodes.filter(n => n.type === type);
+  renderGraph();
+  renderList(filteredNodes);
+}}
+
+// ── Graph Rendering ──
+function renderGraph() {{
+  const canvas = document.getElementById('graph');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (!filteredNodes.length) {{
+    ctx.fillStyle = '#484f58'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('No knowledge yet. Consolidation runs daily at 3 AM.', w/2, h/2);
+    return;
+  }}
+
+  // Layout: simple circular arrangement
+  const cx = w/2, cy = h/2;
+  const radius = Math.min(w, h) * 0.35;
+  const nodeMap = {{}};
+  filteredNodes.forEach((n, i) => {{
+    const angle = (i / filteredNodes.length) * 2 * Math.PI - Math.PI/2;
+    n.x = cx + radius * Math.cos(angle);
+    n.y = cy + radius * Math.sin(angle);
+    nodeMap[n.id] = n;
+  }});
+
+  // Draw edges
+  graphData.edges.forEach(e => {{
+    const from = nodeMap[e.from], to = nodeMap[e.to];
+    if (from && to) {{
+      ctx.strokeStyle = e.strength > 0.6 ? '#58a6ff' : '#30363d';
+      ctx.lineWidth = e.strength * 2;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }}
+  }});
+
+  // Draw nodes
+  filteredNodes.forEach(n => {{
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, Math.max(4, n.importance * 2.5), 0, 2 * Math.PI);
+    ctx.fillStyle = n.color;
+    ctx.fill();
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }});
+
+  // Labels for important nodes
+  filteredNodes.filter(n => n.importance >= 4).forEach(n => {{
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(n.label.slice(0, 15), n.x, n.y - Math.max(4, n.importance * 2.5) - 4);
+  }});
+}}
+
+// ── Knowledge List ──
+function renderList(nodes) {{
+  const list = document.getElementById('knowledgeList');
+  document.getElementById('itemCount').textContent = '(' + nodes.length + ')';
+  list.innerHTML = nodes.sort((a,b) => b.score - a.score).map(n => `
+    <div class="knowledge-item" onmouseenter="showTooltip(event,'${{n.id}}')" onmouseleave="hideTooltip()">
+      <span class="tag tag-${{n.type}}">${{n.type}}</span>
+      ${{n.label}}
+      <span style="float:right;font-size:11px;color:#484f58">score:${{n.score}} · ${{n.created}}</span>
+    </div>
+  `).join('');
+}}
+
+function showTooltip(e, id) {{
+  const n = graphData.nodes.find(n => n.id === id);
+  if (!n) return;
+  const tip = document.getElementById('tooltip');
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX + 15) + 'px';
+  tip.style.top = (e.clientY + 15) + 'px';
+  tip.innerHTML = `
+    <strong style="color:${{n.color}}">${{n.type}}</strong><br>
+    <span style="color:#f0f6fc">${{n.label}}</span><br><br>
+    importance: ${{'★'.repeat(n.importance)}}<br>
+    score: ${{n.score}} · accessed: ${{n.access_count}}x<br>
+    created: ${{n.created}}
+  `;
+}}
+
+function hideTooltip() {{
+  document.getElementById('tooltip').style.display = 'none';
+}}
+
+// ── Search ──
+async function search() {{
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) {{ loadGraph(); return; }}
+  const results = await API('/api/knowledge/search?q=' + encodeURIComponent(q));
+  filteredNodes = results.map(r => ({{id:r.id, label:r.content.slice(0,40), type:r.type, color:{{fact:'#238636',pattern:'#1f6feb',decision:'#d29922'}}[r.type]||'#58a6ff', importance:r.importance, score:r.score, created:r.created}}));
+  renderGraph();
+  renderList(filteredNodes);
+}}
+
+document.getElementById('graph').addEventListener('mousemove', (e) => {{
+  // Check if hovering near a node
+  const rect = e.target.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (900 / rect.width);
+  const my = (e.clientY - rect.top) * (400 / rect.height);
+  let found = null;
+  for (const n of filteredNodes) {{
+    const dx = mx - n.x, dy = my - n.y;
+    if (dx*dx + dy*dy < 200) {{ found = n; break; }}
+  }}
+  if (found && found !== hoveredNode) {{
+    hoveredNode = found;
+    showTooltip(e, found.id);
+  }} else if (!found) {{
+    hoveredNode = null;
+    hideTooltip();
+  }}
+}});
+
+loadGraph();
+</script>
+</body></html>"""
+
+
+@app.route("/api/knowledge/graph")
+def api_knowledge_graph():
+    try:
+        import pipemind_knowledge_graph as kg
+        return jsonify(kg.get_graph())
+    except Exception as e:
+        return jsonify({"error": str(e), "nodes": [], "edges": [], "stats": {}})
+
+
+@app.route("/api/knowledge/search")
+def api_knowledge_search():
+    q = request.args.get("q", "")
+    try:
+        import pipemind_knowledge_graph as kg
+        results = kg.search_knowledge(q)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify([])
+
+
+@app.route("/api/knowledge/types")
+def api_knowledge_types():
+    try:
+        import pipemind_knowledge_graph as kg
+        return jsonify(kg.get_types())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/knowledge/activity")
+def api_knowledge_activity():
+    try:
+        import pipemind_knowledge_graph as kg
+        return jsonify(kg.get_recent_activity())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

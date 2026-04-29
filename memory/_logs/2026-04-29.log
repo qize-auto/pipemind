@@ -40,3 +40,31 @@
 {"time": "2026-04-29T08:23:04.665685", "level": "info", "module": "core", "message": "决策引擎已启动"}
 {"time": "2026-04-29T08:23:04.666684", "level": "info", "module": "core", "message": "模块启动: decision_engine"}
 {"time": "2026-04-29T08:23:04.666684", "level": "info", "module": "core", "message": "已启动 3 个子系统"}
+{"time": "2026-04-29T08:28:27.691604", "level": "info", "module": "core", "message": "模块注册: core"}
+{"time": "2026-04-29T08:28:27.692596", "level": "info", "module": "core", "message": "PipeMind Core 初始化完成"}
+{"time": "2026-04-29T08:28:27.693575", "level": "info", "module": "core", "message": "  日志目录: C:\\Users\\qize\\Desktop\\弈辛\\pipemind\\memory\\_logs"}
+{"time": "2026-04-29T08:28:27.695320", "level": "info", "module": "core", "message": "模块注册: daemon"}
+{"time": "2026-04-29T08:28:27.971853", "level": "info", "module": "core", "message": "守护进程启动 • http://localhost:9106 • PID: 10380"}
+{"time": "2026-04-29T08:28:27.972841", "level": "info", "module": "core", "message": "模块注册: memory_evolution"}
+{"time": "2026-04-29T08:28:27.973842", "level": "info", "module": "core", "message": "模块注册: yixin_guardian"}
+{"time": "2026-04-29T08:28:27.974844", "level": "info", "module": "core", "message": "模块注册: decision_engine"}
+{"time": "2026-04-29T08:28:27.977843", "level": "info", "module": "core", "message": "模块启动: memory_evolution"}
+{"time": "2026-04-29T08:28:27.977843", "level": "info", "module": "core", "message": "弈辛监控已启动"}
+{"time": "2026-04-29T08:28:27.980668", "level": "info", "module": "core", "message": "模块启动: yixin_guardian"}
+{"time": "2026-04-29T08:28:27.980668", "level": "info", "module": "core", "message": "决策引擎已启动"}
+{"time": "2026-04-29T08:28:27.982682", "level": "info", "module": "core", "message": "模块启动: decision_engine"}
+{"time": "2026-04-29T08:28:27.982682", "level": "info", "module": "core", "message": "已启动 3 个子系统"}
+{"time": "2026-04-29T08:29:11.418127", "level": "info", "module": "core", "message": "模块注册: core"}
+{"time": "2026-04-29T08:29:11.418127", "level": "info", "module": "core", "message": "PipeMind Core 初始化完成"}
+{"time": "2026-04-29T08:29:11.421406", "level": "info", "module": "core", "message": "  日志目录: C:\\Users\\qize\\Desktop\\弈辛\\pipemind\\memory\\_logs"}
+{"time": "2026-04-29T08:29:11.422417", "level": "info", "module": "core", "message": "模块注册: daemon"}
+{"time": "2026-04-29T08:29:11.717509", "level": "info", "module": "core", "message": "守护进程启动 • http://localhost:9107 • PID: 10480"}
+{"time": "2026-04-29T08:29:11.718544", "level": "info", "module": "core", "message": "模块注册: memory_evolution"}
+{"time": "2026-04-29T08:29:11.719542", "level": "info", "module": "core", "message": "模块注册: yixin_guardian"}
+{"time": "2026-04-29T08:29:11.720786", "level": "info", "module": "core", "message": "模块注册: decision_engine"}
+{"time": "2026-04-29T08:29:11.722805", "level": "info", "module": "core", "message": "模块启动: memory_evolution"}
+{"time": "2026-04-29T08:29:11.723741", "level": "info", "module": "core", "message": "弈辛监控已启动"}
+{"time": "2026-04-29T08:29:11.724761", "level": "info", "module": "core", "message": "模块启动: yixin_guardian"}
+{"time": "2026-04-29T08:29:11.725754", "level": "info", "module": "core", "message": "决策引擎已启动"}
+{"time": "2026-04-29T08:29:11.726760", "level": "info", "module": "core", "message": "模块启动: decision_engine"}
+{"time": "2026-04-29T08:29:11.727764", "level": "info", "module": "core", "message": "已启动 3 个子系统"}

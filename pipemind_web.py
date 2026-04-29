@@ -407,6 +407,53 @@ def api_self_improve_logs():
         return jsonify([])
 
 
+@app.route("/api/self-improve/pending")
+def api_self_improve_pending():
+    try:
+        import pipemind_self_improve as si
+        return jsonify(si.get_pending())
+    except Exception as e:
+        return jsonify([])
+
+
+@app.route("/api/self-improve/preview/<imp_id>")
+def api_self_improve_preview(imp_id):
+    try:
+        import pipemind_self_improve as si
+        return jsonify(si.preview_improvement(imp_id))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/self-improve/apply/<imp_id>", methods=["POST"])
+def api_self_improve_apply(imp_id):
+    try:
+        import pipemind_self_improve as si
+        result = si.apply_improvement(imp_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/self-improve/reject/<imp_id>", methods=["POST"])
+def api_self_improve_reject(imp_id):
+    try:
+        import pipemind_self_improve as si
+        ok = si.reject_improvement(imp_id)
+        return jsonify({"ok": ok})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/self-improve/backups")
+def api_self_improve_backups():
+    try:
+        import pipemind_self_improve as si
+        return jsonify(si.get_backups())
+    except Exception as e:
+        return jsonify([])
+
+
 # ── 生命编年史 API ───────────────────────────
 
 @app.route("/chronicle")

@@ -1,0 +1,23 @@
+[
+  {
+    "time": "2026-04-29T08:12:24.649618",
+    "state": {
+      "memory": 0,
+      "perf": "insufficient_data",
+      "yixin": "stopped",
+      "conversations_today": 0,
+      "error_rate": 0
+    },
+    "decisions": [
+      "run_learning"
+    ],
+    "actions": [
+      {
+        "action": "run_learning",
+        "reason": "有待处理的学习任务",
+        "result": "学习完成: 0 项",
+        "success": true
+      }
+    ]
+  }
+]

@@ -167,6 +167,7 @@ def run_server(port=9090):
     print(f"     🌉 弈辛守护: 每5分钟健康检查")
     print(f"     🧬 本体进化: 每日凌晨自调优")
     print(f"     📚 每日学习: 从弈辛/工具/GitHub吸收")
+    print(f"     🤖 决策引擎: 每30分钟自治评估")
     print(f"     Ctrl+C 停止\n")
 
     # ── 启动记忆进化定时器 ──
@@ -180,6 +181,14 @@ def run_server(port=9090):
         print(f"     ✅ 弈辛监控已启动")
     except Exception as e:
         print(f"     ⚠ 弈辛监控启动失败: {e}")
+
+    # ── 启动决策引擎 ──
+    try:
+        import pipemind_decision as dec
+        dec.start_decision_engine()
+        print(f"     ✅ 决策引擎已启动")
+    except Exception as e:
+        print(f"     ⚠ 决策引擎启动失败: {e}")
 
     # 启动 Web 服务器（阻塞）
     pipemind_web.run(port=port, daemon_mode=True)

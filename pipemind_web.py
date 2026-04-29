@@ -1135,6 +1135,131 @@ def api_learn_run():
         return jsonify({"error": str(e)})
 
 
+# ── 决策引擎 API ────────────────────────────
+
+@app.route("/decisions")
+def decisions_page():
+    """决策引擎面板"""
+    try:
+        import pipemind_decision as dec
+        state = dec.get_current_state()
+        logs = dec.get_decision_log(limit=20)
+    except:
+        state = {}
+        logs = []
+
+    # 状态摘要
+    mem = state.get("memory", {})
+    perf = state.get("performance", {})
+    yixin = state.get("yixin", {})
+
+    state_cards = f"""
+    <div class="stat"><div class="num">{mem.get('total',0)}</div><div class="label">Knowledge</div></div>
+    <div class="stat"><div class="num">{perf.get('today_conversations',0)}</div><div class="label">Conv Today</div></div>
+    <div class="stat"><div class="num" style="color:{'#7ee787' if perf.get('error_rate',0)<0.1 else '#f85149'}">{perf.get('error_rate',0):.0%}</div><div class="label">Error Rate</div></div>
+    <div class="stat"><div class="num" style="color:{'#7ee787' if yixin.get('running') else '#f85149'}">{'🟢' if yixin.get('running') else '🔴'}</div><div class="label">Yixin</div></div>
+    <div class="stat"><div class="num">{perf.get('trend','?')}</div><div class="label">Trend</div></div>"""
+
+    # 决策历史
+    log_rows = "\n".join(
+        f"<tr><td>{l.get('time','?')[11:19]}</td>"
+        f"<td>{'、'.join(l.get('decisions',[])) or '—'}</td>"
+        f"<td>{'; '.join(a.get('result','')[:40] for a in l.get('actions',[])) or '—'}</td></tr>"
+        for l in logs[-10:]
+    ) or "<tr><td colspan='3' style='text-align:center;color:#484f58'>No decisions yet</td></tr>"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind Decisions</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:100px;text-align:center}}
+.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
+.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:14px}}
+th{{color:#8b949e;font-size:12px}}
+.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;background:#238636;color:#fff}}
+.btn:hover{{background:#2ea043}}
+pre{{background:#0d1117;padding:10px;border-radius:6px;font-size:12px;max-height:200px;overflow:auto}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/memory">🧠 Memory</a>
+  <a href="/evolution">🧬 Evolution</a><a href="/learn">📚 Learn</a>
+  <a href="/decisions">🤖 Decisions</a>
+  <a href="/yixin">🌉 Yixin</a><a href="/home">🏡 Home</a>
+</nav>
+<h1>🤖 Decision Engine</h1>
+<p style="color:#8b949e;margin-bottom:20px">每30分钟自动评估系统状态，决定下一步行动。</p>
+
+<div class="stat-row">{state_cards}</div>
+
+<div class="card">
+  <h2>🎮 Control</h2>
+  <button class="btn" onclick="cycleNow()">🔄 Run Decision Cycle Now</button>
+  <span id="result" style="margin-left:10px;color:#8b949e"></span>
+</div>
+
+<div class="card">
+  <h2>📜 Decision History</h2>
+  <table><tr><th>Time</th><th>Decisions</th><th>Actions Taken</th></tr>{log_rows}</table>
+</div>
+
+<div class="card">
+  <h2>📄 Current State (raw)</h2>
+  <pre>{json.dumps(state, ensure_ascii=False, indent=2)[:500]}</pre>
+</div>
+
+<script>
+function cycleNow() {{
+  const r = document.getElementById('result');
+  r.textContent = '⏳ Running...';
+  fetch('/api/decisions/cycle', {{method:'POST'}})
+    .then(r=>r.json()).then(d => {{
+      r.textContent = '✅ ' + (d.actions?.length || 0) + ' actions taken';
+      setTimeout(()=>location.reload(),1500);
+    }}).catch(e => r.textContent = '❌ ' + e);
+}}
+</script>
+</body></html>"""
+
+
+@app.route("/api/decisions/state")
+def api_decisions_state():
+    """当前系统状态"""
+    try:
+        import pipemind_decision as dec
+        return jsonify(dec.get_current_state())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/decisions/log")
+def api_decisions_log():
+    """决策历史"""
+    try:
+        import pipemind_decision as dec
+        return jsonify(dec.get_decision_log(limit=30))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/decisions/cycle", methods=["POST"])
+def api_decisions_cycle():
+    """手动触发决策周期"""
+    try:
+        import pipemind_decision as dec
+        result = dec.decision_cycle()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

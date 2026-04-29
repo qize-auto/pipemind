@@ -50,5 +50,31 @@
     ],
     "total_learned": 0,
     "summary": "📚 今日学习 (2026-04-29)"
+  },
+  {
+    "date": "2026-04-29",
+    "time": "2026-04-29T08:12:24.649618",
+    "sources": [
+      {
+        "checked": 3,
+        "new": 0,
+        "sources": [
+          {
+            "name": "awesome-openclaw-skills",
+            "skills": 5138
+          },
+          {
+            "name": "awesome-openclaw-skills-zh",
+            "skills": 0
+          },
+          {
+            "name": "openclaw-master-skills",
+            "skills": 0
+          }
+        ]
+      }
+    ],
+    "total_learned": 0,
+    "summary": "📚 今日学习 (2026-04-29)"
   }
 ]

@@ -56,7 +56,7 @@ def load_soul() -> str:
 
 
 def load_identity() -> str:
-    """构建完整身份标识"""
+    """构建动态身份标识（含实时系统状态）"""
     soul = load_soul()
     lessons = evo.get_lessons_summary()
     vital = evo.vital_signs()
@@ -69,8 +69,63 @@ def load_identity() -> str:
 - 技能: {vital['skills']} 个
 - 当前时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S %A')}
 """
+
+    # ── 实时状态注入 ──
+    state_lines = []
+
+    # 今日对话
+    try:
+        import pipemind_self_evolution as se
+        p = se.PerformanceTracker.stats(days=1)
+        if p.get("total", 0) > 0:
+            state_lines.append(f"今日对话: {p['total']} 次, 平均 {p['avg_duration']}s, 趋势 {p['trend']}")
+    except:
+        pass
+
+    # 知识库
+    try:
+        import pipemind_memory_evolution as me
+        k = me.get_stats()
+        if k.get("total", 0) > 0:
+            state_lines.append(f"知识库: {k['total']} 条 (fact={k['by_type'].get('fact',0)}, pattern={k['by_type'].get('pattern',0)})")
+    except:
+        pass
+
+    # 今日学习
+    try:
+        import pipemind_daily_learn as dl
+        logs = dl.get_learn_log(days=1)
+        if logs and logs[0].get("total_learned", 0) > 0:
+            state_lines.append(f"今日学到: {logs[0]['total_learned']} 项新知识")
+    except:
+        pass
+
+    # 决策引擎状态
+    try:
+        import pipemind_decision as dec
+        dlogs = dec.get_decision_log(limit=3)
+        actions = sum(len(l.get("actions", [])) for l in dlogs)
+        if actions > 0:
+            state_lines.append(f"最近决策: {actions} 次自动行动")
+    except:
+        pass
+
+    # 弈辛状态
+    try:
+        import pipemind_wsl_bridge as wsl
+        s = wsl.get_monitor().status
+        yixin_status = "🟢运行中" if s.get("running") else "🔴已停止"
+        yixin_model = s.get("model", "?")
+        state_lines.append(f"弈辛: {yixin_status} ({yixin_model})")
+    except:
+        pass
+
+    if state_lines:
+        identity += "\n## 实时状态\n" + "\n".join(f"- {l}" for l in state_lines)
+
     if lessons:
         identity += f"\n{lessons}"
+
     return identity
 
 

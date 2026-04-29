@@ -1260,6 +1260,104 @@ def api_decisions_cycle():
         return jsonify({"error": str(e)})
 
 
+# ── 系统状态 / 日志 API ─────────────────────
+
+@app.route("/status")
+def status_page():
+    """系统状态面板 — 所有子系统一览"""
+    try:
+        from pipemind_core import list_modules, module_stats, get_recent_logs, PIPEMIND_DIR
+        modules = list_modules()
+        stats = module_stats()
+        logs = get_recent_logs(limit=30)
+    except:
+        modules = []
+        stats = {"total": 0, "running": 0, "errored": 0}
+        logs = []
+
+    mod_rows = "\n".join(
+        f"<tr><td>{m.get('name','?')}</td>"
+        f"<td><span class='status-{m['status']}'>{'🟢' if m['status']=='running' else '🔴' if m['status']=='error' else '⚪'}</span></td>"
+        f"<td>{m.get('started_at','—')[:19] if m.get('started_at') else '—'}</td>"
+        f"<td>{m.get('errors',0)}</td></tr>"
+        for m in modules
+    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No modules registered</td></tr>"
+
+    log_rows = "\n".join(
+        f"<tr><td>{l.get('time','?')[11:19]}</td>"
+        f"<td><span class='level-{l.get('level','info')}'>{l.get('level','?')}</span></td>"
+        f"<td>{l.get('module','?')}</td>"
+        f"<td>{l.get('message','')[:60]}</td></tr>"
+        for l in logs
+    ) or "<tr><td colspan='4' style='text-align:center;color:#484f58'>No logs yet</td></tr>"
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PipeMind Status</title>
+<style>
+body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
+nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
+nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
+nav a:hover{{background:#1f2937}}
+h1{{color:#f0f6fc}} h2{{color:#f0f6fc;font-size:16px}}
+.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
+.stat-row{{display:flex;gap:15px;flex-wrap:wrap}}
+.stat{{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:15px;min-width:80px;text-align:center}}
+.stat .num{{font-size:24px;font-weight:bold;color:#58a6ff}}
+.stat .label{{font-size:12px;color:#8b949e;margin-top:4px}}
+table{{width:100%;border-collapse:collapse}}
+th,td{{text-align:left;padding:8px;border-bottom:1px solid #30363d;font-size:13px}}
+th{{color:#8b949e;font-size:11px}}
+.status-running{{color:#7ee787}} .status-error{{color:#f85149}} .status-stopped{{color:#484f58}}
+.level-error{{color:#f85149;font-weight:bold}} .level-warn{{color:#d29922}} .level-info{{color:#8b949e}}
+</style></head><body>
+<nav>
+  <a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/status">📊 Status</a>
+  <a href="/memory">🧠 Memory</a><a href="/evolution">🧬 Evolution</a>
+  <a href="/decisions">🤖 Decisions</a><a href="/learn">📚 Learn</a>
+  <a href="/yixin">🌉 Yixin</a>
+</nav>
+<h1>📊 System Status</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="num">{stats.get('total',0)}</div><div class="label">Modules</div></div>
+  <div class="stat"><div class="num" style="color:#7ee787">{stats.get('running',0)}</div><div class="label">Running</div></div>
+  <div class="stat"><div class="num" style="color:#f85149">{stats.get('errored',0)}</div><div class="label">Errored</div></div>
+</div>
+
+<div class="card">
+  <h2>🧩 Module Registry</h2>
+  <table><tr><th>Module</th><th>Status</th><th>Started</th><th>Errors</th></tr>{mod_rows}</table>
+</div>
+
+<div class="card">
+  <h2>📋 Live Logs</h2>
+  <table><tr><th>Time</th><th>Level</th><th>Module</th><th>Message</th></tr>{log_rows}</table>
+</div>
+</body></html>"""
+
+
+@app.route("/api/status/modules")
+def api_status_modules():
+    """模块注册表"""
+    try:
+        from pipemind_core import list_modules
+        return jsonify(list_modules())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/status/logs")
+def api_status_logs():
+    """最近日志"""
+    try:
+        from pipemind_core import get_recent_logs
+        level = request.args.get("level")
+        module = request.args.get("module")
+        return jsonify(get_recent_logs(limit=50, level=level, module=module))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 # ── 启动 ──────────────────────────────────────
 
 def run(port=9090, daemon_mode=False):

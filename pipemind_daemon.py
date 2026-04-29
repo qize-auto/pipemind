@@ -6,11 +6,21 @@
   pipemind.py --stop    →  停止守护进程
 """
 
-import os, sys, json, time, signal, threading, atexit, subprocess, datetime, urllib.request, urllib.error
+import os, sys, json, time, signal, threading, atexit, subprocess, datetime
 
-PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
-MEMORY_DIR = os.path.join(PIPEMIND_DIR, "memory")
-PID_FILE = os.path.join(MEMORY_DIR, "_daemon.pid")
+# ── 核心基座 ──
+try:
+    from pipemind_core import log, safe, register_module, start_module, \
+        stop_module, module_stats, list_modules, \
+        PIPEMIND_DIR, MEM_DIR
+    CORE_READY = True
+except Exception:
+    CORE_READY = False
+    # 降级
+    PIPEMIND_DIR = os.path.dirname(os.path.abspath(__file__))
+    MEM_DIR = os.path.join(PIPEMIND_DIR, "memory")
+
+PID_FILE = os.path.join(MEM_DIR, "_daemon.pid")
 
 _agent = None
 _running = False
@@ -44,7 +54,7 @@ def reset_agent():
 # ── PID 管理 ──────────────────────────────────────
 
 def _save_pid(port):
-    os.makedirs(MEMORY_DIR, exist_ok=True)
+    os.makedirs(MEM_DIR, exist_ok=True)
     with open(PID_FILE, "w") as f:
         json.dump({
             "pid": os.getpid(),
@@ -96,6 +106,7 @@ def stop_daemon():
             info = json.load(f)
         # 通过 HTTP 发送停止请求（优雅关闭）
         try:
+            import urllib.request
             req = urllib.request.Request(
                 f"http://localhost:{info['port']}/api/daemon/stop",
                 data=b"{}",
@@ -149,6 +160,12 @@ def run_server(port=9090):
     global _running
     _running = True
 
+    # 初始化核心
+    if CORE_READY:
+        import pipemind_core as core
+        core.init()
+        register_module("daemon")
+
     # 初始化持久化实例
     agent = get_agent()
 
@@ -160,41 +177,56 @@ def run_server(port=9090):
     _save_pid(port)
     atexit.register(_cleanup_pid)
 
-    print(f"\n  🌐 PipeMind 守护进程")
-    print(f"     http://localhost:{port}")
-    print(f"     PID: {os.getpid()}")
-    print(f"     🧠 记忆进化: 每日凌晨聚合")
-    print(f"     🌉 弈辛守护: 每5分钟健康检查")
-    print(f"     🧬 本体进化: 每日凌晨自调优")
-    print(f"     📚 每日学习: 从弈辛/工具/GitHub吸收")
-    print(f"     🤖 决策引擎: 每30分钟自治评估")
-    print(f"     Ctrl+C 停止\n")
+    log.info(f"守护进程启动 • http://localhost:{port} • PID: {os.getpid()}")
 
-    # ── 启动记忆进化定时器 ──
-    _start_consolidation_timer()
-
-    # ── 启动弈辛健康监控 ──
-    try:
-        import pipemind_wsl_bridge as wsl
-        monitor = wsl.get_monitor()
-        monitor.start()
-        print(f"     ✅ 弈辛监控已启动")
-    except Exception as e:
-        print(f"     ⚠ 弈辛监控启动失败: {e}")
-
-    # ── 启动决策引擎 ──
-    try:
-        import pipemind_decision as dec
-        dec.start_decision_engine()
-        print(f"     ✅ 决策引擎已启动")
-    except Exception as e:
-        print(f"     ⚠ 决策引擎启动失败: {e}")
+    # ── 注册并启动所有子系统 ──
+    _register_and_start_subsystems()
 
     # 启动 Web 服务器（阻塞）
     pipemind_web.run(port=port, daemon_mode=True)
 
     _cleanup_pid()
     _running = False
+
+
+def _register_and_start_subsystems():
+    """注册并启动所有后台子系统"""
+    subsystems = []
+
+    # 记忆进化（定时器，3:00）
+    def _start_memory():
+        _start_consolidation_timer()
+    subsystems.append(("memory_evolution", _start_memory, None, []))
+
+    # 弈辛监控（线程，5分钟间隔）
+    def _start_yixin():
+        try:
+            import pipemind_wsl_bridge as wsl
+            wsl.get_monitor().start()
+            log.info("弈辛监控已启动")
+        except Exception as e:
+            log.warn(f"弈辛监控不可用: {e}")
+    subsystems.append(("yixin_guardian", _start_yixin, None, []))
+
+    # 决策引擎（线程，30分钟间隔）
+    def _start_decision():
+        try:
+            import pipemind_decision as dec
+            dec.start_decision_engine()
+            log.info("决策引擎已启动")
+        except Exception as e:
+            log.warn(f"决策引擎不可用: {e}")
+    subsystems.append(("decision_engine", _start_decision, None, ["memory_evolution"]))
+
+    # 注册所有子系统
+    for name, start_fn, stop_fn, deps in subsystems:
+        register_module(name, start_fn, stop_fn, deps)
+
+    # 启动所有
+    for name, _, _, _ in subsystems:
+        safe(name, lambda n=name: start_module(n))
+
+    log.info(f"已启动 {len(subsystems)} 个子系统")
 
 
 def _start_consolidation_timer():

@@ -5,3 +5,7 @@ output/
 memory/.dreams/
 config.json
 *.nudge.json
+
+# WSL Bridge (private - local paths and env config)
+pipemind_wsl_bridge.py
+memory/_yixin_events.json

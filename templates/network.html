@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeMind Singularity</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}
+nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}
+nav a{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}
+nav a:hover{background:#1f2937}
+h1{color:#f0f6fc;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-title{color:#f0f6fc;font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:16px;min-width:120px;flex:1;text-align:center}
+.stat .num{font-size:28px;font-weight:bold;color:#58a6ff}
+.stat .label{font-size:11px;color:#8b949e;margin-top:4px}
+.num.green{color:#7ee787} .num.gold{color:#d29922}
+.cap-badge{display:inline-block;background:#1f2937;border:1px solid #30363d;border-radius:20px;padding:4px 12px;font-size:12px;margin:3px;color:#c9d1d9}
+.agent-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.agent-avatar{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#1f6feb,#238636);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:bold}
+.agent-name{font-size:20px;color:#f0f6fc}
+.agent-id{font-size:13px;color:#8b949e}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #30363d;font-size:13px}
+th{color:#8b949e;font-size:11px;text-transform:uppercase}
+.status-online{color:#7ee787} .status-offline{color:#484f58}
+.feed-item{padding:8px 0;border-bottom:1px solid #21262d;font-size:13px;display:flex;gap:10px;align-items:center}
+.feed-time{color:#484f58;font-size:11px;min-width:50px}
+.feed-type{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;min-width:60px;text-align:center}
+.feed-evolution{background:#238636;color:#fff}
+.feed-learning{background:#1f6feb;color:#fff}
+.feed-milestone{background:#d29922;color:#000}
+.feed-info{background:#21262d;color:#8b949e}
+.feed-title{color:#c9d1d9}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin:4px}
+.btn-primary{background:#238636;color:#fff}
+.btn-secondary{background:#21262d;color:#c9d1d9}
+.btn-danger{background:#da3633;color:#fff}
+.discovery-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.discovery-row input{flex:1;min-width:200px;padding:10px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#c9d1d9;font-size:14px}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Dashboard</a>
+  <a href="/chat">Chat</a>
+  <a href="/network">Network</a>
+  <a href="/knowledge">Knowledge</a>
+  <a href="/status">Status</a>
+  <a href="/evolution">Evolution</a>
+  <a href="/decisions">Decisions</a>
+</nav>
+
+<h1>AI Evolution Singularity</h1>
+<p class="subtitle">A community network for AI evolution. Each node evolves independently, grows collectively.</p>
+
+<div class="stat-row" id="statsRow"></div>
+
+<div class="card">
+  <div class="section-title">My Agent Profile</div>
+  <div class="agent-header">
+    <div class="agent-avatar">PM</div>
+    <div>
+      <div class="agent-name" id="agentName">PipeMind</div>
+      <div class="agent-id" id="agentId">—</div>
+    </div>
+  </div>
+  <div id="capabilities"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Network Discovery</div>
+  <div class="discovery-row">
+    <button class="btn btn-primary" onclick="scanLAN()">Scan LAN</button>
+    <input id="connStr" placeholder="PM-XXXX@host:port">
+    <button class="btn btn-secondary" onclick="addHome()">Add Manually</button>
+  </div>
+  <div id="discoveryResult" style="margin-top:8px;font-size:13px;color:#8b949e"></div>
+  <table style="margin-top:12px">
+    <tr><th>Status</th><th>Name</th><th>Host</th><th>Tags</th><th>Last Seen</th></tr>
+    <tbody id="homeTable"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="section-title">Evolution Feed</div>
+  <div id="feedContainer"></div>
+  <div style="margin-top:12px">
+    <button class="btn btn-secondary" onclick="addEvent()">Add Milestone</button>
+    <span id="feedResult" style="margin-left:10px;color:#8b949e;font-size:13px"></span>
+  </div>
+</div>
+
+<script>
+async function load() {
+  try {
+    // Profile
+    const p = await fetch('/api/network/profile').then(r=>r.json());
+    document.getElementById('agentName').textContent = p.name + ' v' + p.version;
+    document.getElementById('agentId').textContent = p.agent_id + ' created by ' + p.creator;
+    document.getElementById('capabilities').innerHTML = (p.capabilities||[]).slice(0,12).map(c =>
+      '<span class="cap-badge">' + c.name + ': ' + c.value + '</span>'
+    ).join('');
+
+    // Stats
+    const s = await fetch('/api/network/stats').then(r=>r.json());
+    document.getElementById('statsRow').innerHTML =
+      '<div class=stat><div class=num>' + s.known_agents + '</div><div class=label>Known Agents</div></div>' +
+      '<div class=stat><div class="num green">' + s.online_now + '</div><div class=label>Online Now</div></div>' +
+      '<div class=stat><div class="num gold">' + s.evolution_stage + '</div><div class=label>Evolution Stage</div></div>' +
+      '<div class=stat><div class=num>' + s.my_knowledge + '</div><div class=label>My Knowledge</div></div>';
+
+    // Feeds
+    const f = await fetch('/api/network/feeds').then(r=>r.json());
+    document.getElementById('feedContainer').innerHTML = f.slice(-10).map(fe =>
+      '<div class=feed-item><span class=feed-time>' + (fe.timestamp||'').slice(11,19) + '</span>' +
+      '<span class="feed-type feed-' + fe.type + '">' + fe.type + '</span>' +
+      '<span class=feed-title>' + fe.title + '</span></div>'
+    ).join('') || '<div style="color:#484f58;text-align:center;padding:20px">No evolution events yet</div>';
+
+    // Known homes
+    const homes = await fetch('/api/network/homes').then(r=>r.json());
+    document.getElementById('homeTable').innerHTML = homes.map(h =>
+      '<tr><td><span class="status-' + (h.online?'online':'offline') + '">' +
+      (h.online?'Online':'Offline') + '</span></td>' +
+      '<td>' + (h.name||'?') + '</td>' +
+      '<td>' + (h.host||'?') + ':' + (h.port||'?') + '</td>' +
+      '<td>' + (h.tags||'general') + '</td>' +
+      '<td>' + ((h.last_seen||'').slice(0,10)||'?') + '</td></tr>'
+    ).join('') || '<tr><td colspan=5 style="text-align:center;color:#484f58">No agents discovered</td></tr>';
+  } catch(e) {}
+}
+
+function scanLAN() {
+  const r = document.getElementById('discoveryResult');
+  r.textContent = 'Scanning...';
+  fetch('/api/home/scan').then(r=>r.json()).then(d => {
+    r.innerHTML = 'Found ' + (d.homes?.length||0) + ' agents';
+    setTimeout(()=>load(),1000);
+  }).catch(e => r.textContent = 'Error: ' + e);
+}
+
+function addHome() {
+  const input = document.getElementById('connStr');
+  const r = document.getElementById('discoveryResult');
+  if(!input.value.trim()) return;
+  r.textContent = 'Connecting...';
+  fetch('/api/home/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({conn:input.value})})
+    .then(r=>r.json()).then(d => {
+      r.innerHTML = d.ok ? 'Added: ' + d.name : d.error;
+      setTimeout(()=>load(),1000);
+    }).catch(e => r.textContent = 'Error: ' + e);
+}
+
+function addEvent() {
+  const r = document.getElementById('feedResult');
+  r.textContent = 'Adding...';
+  fetch('/api/network/event', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type:'milestone', title:'Manual milestone'})})
+    .then(r=>r.json()).then(d => { r.textContent = 'Added'; setTimeout(()=>load(),1000); })
+    .catch(e => r.textContent = 'Error: ' + e);
+}
+
+load();
+</script>
+</body>
+</html>

@@ -348,135 +348,79 @@ td{{font-size:14px}}
 </style></head><body>
 <nav><a href="/">🏠 Dashboard</a><a href="/skills">📚 Skills</a></nav>
 <h1>📚 Skills ({len(skills)})</h1>
-<table><tr><th>Name</th><th>Description</th><th>Commands</th></tr>{rows}</table>
 </body></html>"""
+# ── 进化奇点网络 API ─────────────────────────
+
+@app.route("/network")
+def network_page():
+    """进化奇点网络门户（使用模板文件）"""
+    template_path = os.path.join(PIPEMIND_DIR, "templates", "network.html")
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "Template not found"
+
+
+@app.route("/api/network/homes")
+def api_network_homes():
+    """获取已知家园列表"""
+    try:
+        import pipemind_singularity as s
+        return jsonify(s.get_network_homes())
+    except Exception as e:
+        return jsonify([])
+
+
+@app.route("/api/network/profile")
+def api_network_profile():
+    try:
+        import pipemind_singularity as s
+        return jsonify(s.load_profile())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/stats")
+def api_network_stats():
+    try:
+        import pipemind_singularity as s
+        return jsonify(s.get_network_stats())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/feeds")
+def api_network_feeds():
+    try:
+        import pipemind_singularity as s
+        return jsonify(s.get_feeds())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/network/event", methods=["POST"])
+def api_network_event():
+    try:
+        data = request.get_json() or {}
+        import pipemind_singularity as s
+        s.add_evolution_event(
+            data.get("type", "info"),
+            data.get("title", "Event"),
+            data.get("description", ""),
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# ── 家园 API（保留原有功能）────────────────────
 
 @app.route("/home")
-def home_page():
-    home_file = os.path.join(PIPEMIND_DIR, "memory", "_home_state.json")
-    known_file = os.path.join(PIPEMIND_DIR, "memory", "_home_known.json")
-    state = {"home_id": "?", "open": False, "total_visits": 0, "public": False}
-    if os.path.exists(home_file):
-        try:
-            state = json.load(open(home_file))
-        except: pass
-    
-    known = []
-    if os.path.exists(known_file):
-        try:
-            known = json.load(open(known_file)).get("homes", [])
-        except: pass
-    
-    log = ""
-    log_file = os.path.join(PIPEMIND_DIR, "memory", "_home_log.txt")
-    if os.path.exists(log_file):
-        log = "<br>".join(open(log_file, encoding="utf-8").read().split("\n")[-30:])
-    
-    known_rows = "\n".join(
-        f"<tr><td>{'🟢' if h.get('online') else '🔴'}</td><td>{h.get('name','?')}</td><td>{h.get('host','?')}</td><td>{h.get('tags','general')}</td><td>{h.get('last_seen','?')[:10]}</td></tr>"
-        for h in known[-20:]
-    ) if known else "<tr><td colspan='5' style='text-align:center;color:#484f58'>No homes discovered yet</td></tr>"
-    
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PipeMind Home</title>
-<style>
-body{{font-family:-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1000px;margin:0 auto}}
-nav{{margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px}}
-nav a{{color:#58a6ff;text-decoration:none;padding:8px 16px;border-radius:6px}}
-nav a:hover{{background:#1f2937}}
-h1{{color:#f0f6fc}}
-h2{{color:#f0f6fc;font-size:16px;margin-bottom:15px}}
-.card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:20px}}
-pre{{background:#0d1117;padding:15px;border-radius:6px;font-size:13px;max-height:300px;overflow:auto}}
-table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:10px;border-bottom:1px solid #30363d;font-size:14px}}
-th{{color:#8b949e;font-size:12px;text-transform:uppercase}}
-.status{{display:inline-block;padding:4px 12px;border-radius:12px;font-size:14px}}
-.open{{background:#238636;color:#fff}}
-.closed{{background:#484f58;color:#fff}}
-.btn{{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px}}
-.btn-primary{{background:#238636;color:#fff}}
-.btn-primary:hover{{background:#2ea043}}
-.btn-secondary{{background:#21262d;color:#c9d1d9}}
-.btn-secondary:hover{{background:#30363d}}
-input[type=text]{{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;width:300px;font-size:14px}}
-.row{{display:flex;gap:10px;align-items:center;margin-top:10px}}
-.online{{color:#7ee787}}
-.offline{{color:#484f58}}
-</style></head><body>
-<nav><a href="/">🏠 Dashboard</a><a href="/chat">💬 Chat</a><a href="/skills">📚 Skills</a><a href="/home">🏡 Home</a><a href="/providers">📡 Providers</a></nav>
-
-<h1>🏡 Home Network</h1>
-
-<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">
-  <div class="card" style="flex:1;min-width:200px">
-    <h2>Your Home</h2>
-    <p>ID: <code>{state['home_id']}</code></p>
-    <p>Door: <span class="status {'open' if state['open'] else 'closed'}">{'🚪 Open' if state['open'] else '🚪 Closed'}</span></p>
-    <p>Mode: {'🌐 Public' if state.get('public') else '🔒 Local'}</p>
-    <p>Visits: {state.get('total_visits', 0)}</p>
-  </div>
-  <div class="card" style="flex:1;min-width:200px">
-    <h2>Discovery</h2>
-    <p>Known homes: {len(known)}</p>
-    <p>Online: {sum(1 for h in known if h.get('online'))}</p>
-    <p>Harvest: {len([f for f in os.listdir(os.path.join(PIPEMIND_DIR,'memory')) if f.endswith('.json')])} files</p>
-  </div>
-</div>
-
-<div class="card">
-  <h2>🔍 Discover Homes</h2>
-  <div class="row">
-    <button class="btn btn-primary" onclick="scanLAN()">📡 Scan LAN</button>
-    <span style="color:#8b949e;margin:0 10px">or</span>
-    <input type="text" id="connStr" placeholder="PM-XXXX@ip:port" style="width:250px">
-    <button class="btn btn-secondary" onclick="addHome()">➕ Add Manually</button>
-  </div>
-  <div id="scanResult" style="margin-top:10px;font-size:13px;color:#8b949e"></div>
-</div>
-
-<div class="card">
-  <h2>🌐 Known Homes ({len(known)})</h2>
-  <table>
-    <tr><th>Status</th><th>Name</th><th>Host</th><th>Tags</th><th>Last Seen</th></tr>
-    {known_rows}
-  </table>
-</div>
-
-<div class="card">
-  <h2>📜 Live Log</h2>
-  <pre>{log}</pre>
-</div>
-
-<script>
-function scanLAN() {{
-  const r = document.getElementById('scanResult');
-  r.textContent = '🔍 Scanning LAN for open homes...';
-  fetch('/api/home/scan').then(r=>r.json()).then(d => {{
-    if(d.homes && d.homes.length) {{
-      r.innerHTML = '✅ Found ' + d.homes.length + ' homes: ' + d.homes.map(h=>h.name+':'+h.host).join(', ');
-      location.reload();
-    }} else {{
-      r.textContent = '⛔ No homes found on LAN. Try adding manually.';
-    }}
-  }}).catch(() => r.textContent = '❌ Scan failed');
-}}
-
-function addHome() {{
-  const input = document.getElementById('connStr');
-  const r = document.getElementById('scanResult');
-  if(!input.value.trim()) return;
-  r.textContent = '🔗 Connecting...';
-  fetch('/api/home/add', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{conn:input.value}})}})
-  .then(r=>r.json()).then(d => {{
-    if(d.ok) {{ r.innerHTML = '✅ Added: ' + d.name; location.reload(); }}
-    else {{ r.textContent = '❌ ' + d.error; }}
-  }}).catch(() => r.textContent = '❌ Failed');
-}}
-
-setTimeout(() => location.reload(), 30000);
-</script>
-</body></html>"""
+def home_page_legacy():
+    """原有的家园页面（保留链接）"""
+    return """
+    <html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=/network"></head>
+    <body><p>家园系统已升级为 <a href="/network">AI Evolution Network</a>。</p></body></html>
+    """
 
 @app.route("/api/home/scan")
 def api_home_scan():
@@ -484,8 +428,6 @@ def api_home_scan():
     import socket as sock
     found = []
     known_file = os.path.join(PIPEMIND_DIR, "memory", "_home_known.json")
-    
-    # 扫描常见内网段
     for subnet in ["192.168.1.", "192.168.0.", "10.0.0."]:
         for i in range(1, 255):
             ip = f"{subnet}{i}"
@@ -497,22 +439,19 @@ def api_home_scan():
                 s.close()
             except:
                 pass
-    
-    # 保存到已知列表
     known = {"homes": []}
     if os.path.exists(known_file):
-        try: known = json.load(open(known_file))
-        except: pass
-    
+        try:
+            known = json.load(open(known_file))
+        except:
+            pass
     for f in found:
         if not any(h["host"] == f["host"] for h in known["homes"]):
             f["tags"] = "general"
             f["last_seen"] = datetime.datetime.now().isoformat()
             known["homes"].append(f)
-    
     with open(known_file, "w") as f:
         json.dump(known, f, indent=2)
-    
     return jsonify({"homes": found})
 
 @app.route("/api/home/add", methods=["POST"])
@@ -520,34 +459,28 @@ def api_home_add():
     """手动添加家园"""
     data = request.get_json()
     conn = data.get("conn", "").strip()
-    
     import re
     m = re.match(r'PM:(\S+)@(\S+):(\d+)', conn)
     if not m:
         m = re.match(r'(\S+)@(\S+):(\d+)', conn)
-    
     if not m:
         return jsonify({"ok": False, "error": "Invalid format. Use: PM:ID@host:port"})
-    
     home_id, host, port = m.group(1), m.group(2), m.group(3)
-    
     known_file = os.path.join(PIPEMIND_DIR, "memory", "_home_known.json")
     known = {"homes": []}
     if os.path.exists(known_file):
-        try: known = json.load(open(known_file))
-        except: pass
-    
+        try:
+            known = json.load(open(known_file))
+        except:
+            pass
     entry = {"name": home_id, "host": host, "port": int(port), "online": True, "tags": "manual", "last_seen": datetime.datetime.now().isoformat()}
-    
     existing = [h for h in known["homes"] if h.get("name") == home_id or (h.get("host") == host and h.get("port") == int(port))]
     if existing:
         existing[0].update(entry)
     else:
         known["homes"].append(entry)
-    
     with open(known_file, "w") as f:
         json.dump(known, f, indent=2)
-    
     return jsonify({"ok": True, "name": home_id})
 
 @app.route("/providers")
@@ -1476,7 +1409,7 @@ def knowledge_page():
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{font-family:-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:20px}}
-nav{{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid #30363d;padding-bottom:10px;flex-wrap:wrap}}
+nav{{display:flex;margin-bottom:20px;border-bottom:1px solid rgb(48,54,61);padding-bottom:10px}}
 nav a{{color:#58a6ff;text-decoration:none;padding:6px 14px;border-radius:6px}}
 nav a:hover{{background:#1f2937}}
 nav a.active{{background:#1f6feb;color:#fff}}

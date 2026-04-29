@@ -1,0 +1,59 @@
+{
+  "agent_id": "PM-60DD5A27",
+  "name": "PipeMind",
+  "type": "pipe",
+  "version": "4.0",
+  "creator": "大王/gize",
+  "created": "2026-04-29T08:44:30.060660",
+  "last_seen": "2026-04-29T08:44:32.092966",
+  "capabilities": [
+    {
+      "name": "modules",
+      "value": 40
+    },
+    {
+      "name": "skills",
+      "value": 16
+    },
+    {
+      "name": "knowledge",
+      "value": 0
+    },
+    {
+      "name": "knowledge_types",
+      "value": {}
+    },
+    {
+      "name": "evolution_stage",
+      "value": 12
+    },
+    {
+      "name": "has_daemon",
+      "value": true
+    },
+    {
+      "name": "has_tray",
+      "value": true
+    },
+    {
+      "name": "has_decision_engine",
+      "value": true
+    },
+    {
+      "name": "conversations_7d",
+      "value": 0
+    },
+    {
+      "name": "avg_response_time",
+      "value": 0
+    },
+    {
+      "name": "trend",
+      "value": "insufficient_data"
+    }
+  ],
+  "evolution_stage": 12,
+  "modules": 0,
+  "skills": 0,
+  "knowledge": 0
+}

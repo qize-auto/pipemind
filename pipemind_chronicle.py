@@ -210,6 +210,149 @@ def generate_narrative(days=7) -> str:
 
 
 # ═══════════════════════════════════════════════
+# 5. 反思与改进信号
+# ═══════════════════════════════════════════════
+
+def reflect(days=7) -> dict:
+    """用 LLM 分析近期成长数据，输出改进方向
+
+    返回: {insights, priorities, recommendations}
+    """
+    chronicle = _load_chronicle()
+    recent = chronicle[-days:] if len(chronicle) >= days else chronicle
+    milestones = _load_milestones()[-10:]
+    growth = get_growth_data(days=days)
+
+    if not recent:
+        return {"insights": [], "priorities": [], "recommendations": []}
+
+    prompt = f"""你是一个 AI 生命体的自我反思系统。分析以下成长数据，输出改进方向。
+
+每日快照:
+{json.dumps(recent, ensure_ascii=False, indent=2)}
+
+里程碑:
+{json.dumps(milestones, ensure_ascii=False, indent=2)}
+
+成长趋势:
+{json.dumps(growth, ensure_ascii=False, indent=2)[:500]}
+
+返回 JSON (中文):
+{{
+  "insights": ["对近期成长的3个洞察"],
+  "priorities": ["下一步最应该改进的2-3个方向"],
+  "recommendations": ["每个方向的具体行动建议"]
+}}
+"""
+    try:
+        result = _call_llm(prompt)
+        parsed = json.loads(result) if isinstance(result, str) else result
+        return parsed
+    except:
+        return {"insights": ["分析失败"], "priorities": [], "recommendations": []}
+
+
+def get_improvement_signals() -> dict:
+    """从成长数据中提取改进信号（不用 LLM，纯数据分析）
+
+    返回:
+      plateau_days: 连续无增长的天数
+      trend: 综合趋势
+      focus_areas: 需要关注的领域
+    """
+    chronicle = _load_chronicle()
+    if len(chronicle) < 3:
+        return {"plateau_days": 0, "trend": "insufficient_data", "focus_areas": []}
+
+    recent = chronicle[-3:]
+    signals = {}
+
+    # 检测平台期（连续3天无增长）
+    for metric in ["modules", "skills", "knowledge"]:
+        values = [c.get(metric, 0) for c in recent]
+        if len(set(values)) == 1:
+            signals[metric] = "plateau"
+
+    # 检测下降趋势
+    for metric in ["conversations_today"]:
+        values = [c.get(metric, 0) for c in recent]
+        if values and values[-1] < values[0] * 0.5:
+            signals[metric] = "declining"
+
+    # 综合趋势
+    trend = "stable"
+    if any(v == "declining" for v in signals.values()):
+        trend = "needs_attention"
+    elif any(v == "plateau" for v in signals.values()):
+        trend = "plateau"
+
+    return {
+        "plateau_metrics": [k for k, v in signals.items() if v == "plateau"],
+        "declining_metrics": [k for k, v in signals.items() if v == "declining"],
+        "trend": trend,
+        "focus_areas": signals,
+    }
+
+
+def get_weekly_review() -> dict:
+    """生成周度回顾（用 LLM + 数据分析）"""
+    chronicle = _load_chronicle()
+    weekly = chronicle[-7:] if len(chronicle) >= 7 else chronicle
+
+    if len(weekly) < 2:
+        return {"summary": "数据不足，无法生成周度回顾"}
+
+    # 数据统计
+    first = weekly[0]
+    last = weekly[-1]
+
+    stats = {
+        "period": f"{first.get('date','?')} - {last.get('date','?')}",
+        "modules_change": last.get("modules", 0) - first.get("modules", 0),
+        "skills_change": last.get("skills", 0) - first.get("skills", 0),
+        "knowledge_change": last.get("knowledge", 0) - first.get("knowledge", 0),
+        "total_conversations": sum(c.get("conversations_today", 0) for c in weekly),
+        "avg_response": round(
+            sum(c.get("avg_response_time", 0) for c in weekly) / max(len(weekly), 1), 2
+        ),
+        "best_day": max(weekly, key=lambda c: c.get("conversations_today", 0)).get("date", "?"),
+    }
+
+    # LLM 反思
+    reflection = reflect(days=7)
+
+    return {
+        "stats": stats,
+        "reflection": reflection,
+        "narrative": generate_narrative(days=7),
+    }
+
+
+def get_injection() -> str:
+    """获取可注入对话的成长摘要"""
+    try:
+        summary = get_summary()
+        signals = get_improvement_signals()
+        narrative = generate_narrative(days=1)
+
+        parts = [f"## 我的成长\n{narrative}"]
+
+        if signals.get("plateau_metrics"):
+            parts.append(
+                f"注意: {'、'.join(signals['plateau_metrics'])} 进入平台期"
+            )
+
+        if signals.get("declining_metrics"):
+            parts.append(
+                f"警告: {'、'.join(signals['declining_metrics'])} 呈下降趋势"
+            )
+
+        return "\n".join(parts)
+    except:
+        return ""
+
+
+# ═══════════════════════════════════════════════
 # 内部工具
 # ═══════════════════════════════════════════════
 

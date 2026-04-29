@@ -738,6 +738,33 @@ def api_chronicle_narrative_generate():
     except Exception as e:
         return f"(generation failed: {e})"
 
+
+@app.route("/api/chronicle/reflect")
+def api_chronicle_reflect():
+    try:
+        import pipemind_chronicle as ch
+        return jsonify(ch.reflect(days=7))
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/chronicle/signals")
+def api_chronicle_signals():
+    try:
+        import pipemind_chronicle as ch
+        return jsonify(ch.get_improvement_signals())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route("/api/chronicle/review")
+def api_chronicle_review():
+    try:
+        import pipemind_chronicle as ch
+        return jsonify(ch.get_weekly_review())
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 # ── 家园 API（保留原有功能）────────────────────
 
 @app.route("/home")

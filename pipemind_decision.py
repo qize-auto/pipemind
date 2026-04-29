@@ -37,6 +37,7 @@ def scan() -> dict:
         "performance": _scan_performance(),
         "yixin": _scan_yixin(),
         "learning": _scan_learning(),
+        "chronicle": _scan_chronicle(),
         "system": _scan_system(),
     }
     return state
@@ -97,6 +98,22 @@ def _scan_learning() -> dict:
         }
     except:
         return {"today_learned": 0}
+
+
+def _scan_chronicle() -> dict:
+    """生命编年史状态"""
+    try:
+        import pipemind_chronicle as ch
+        signals = ch.get_improvement_signals()
+        summary = ch.get_summary()
+        return {
+            "trend": signals.get("trend", "stable"),
+            "plateau": signals.get("plateau_metrics", []),
+            "declining": signals.get("declining_metrics", []),
+            "age_days": summary.get("age_days", 0),
+        }
+    except:
+        return {"trend": "unknown", "plateau": [], "declining": []}
 
 
 def _scan_system() -> dict:
@@ -177,6 +194,25 @@ def analyze(state: dict) -> list[dict]:
             "handler": "_handle_learn",
         })
 
+    # 决策 6: 编年史检测到平台期 → 建议做点什么
+    chronicle = state.get("chronicle", {})
+    if chronicle.get("plateau"):
+        decisions.append({
+            "priority": "medium",
+            "action": "break_plateau",
+            "reason": f"检测到平台期: {', '.join(chronicle['plateau'])}",
+            "handler": "_handle_break_plateau",
+        })
+
+    # 决策 7: 编年史检测到下降趋势 → 诊断
+    if chronicle.get("declining"):
+        decisions.append({
+            "priority": "high",
+            "action": "investigate_decline",
+            "reason": f"检测到下降趋势: {', '.join(chronicle['declining'])}",
+            "handler": "_handle_investigate_decline",
+        })
+
     return decisions
 
 
@@ -246,6 +282,32 @@ def _handle_learn():
         return f"学习完成: {result.get('total_learned', 0)} 项"
     except Exception as e:
         return f"学习失败: {e}"
+
+
+def _handle_break_plateau():
+    """突破平台期：执行自我改进周期（dry-run）"""
+    try:
+        import pipemind_self_improve as si
+        cycle = si.run_improvement_cycle(dry_run=True)
+        return f"自我改进: {cycle.get('total', 0)} 条建议, 寻找突破方向"
+    except Exception as e:
+        return f"自我改进失败: {e}"
+
+
+def _handle_investigate_decline():
+    """诊断下降趋势"""
+    try:
+        import pipemind_self_evolution as se
+        stats = se.PerformanceTracker.stats(days=3)
+        se.AutoLearner.learn_from_error(
+            "performance_decline",
+            f"Auto-diagnosed decline: {stats.get('trend', 'unknown')} trend, "
+            f"{stats.get('avg_duration', 0)}s avg response",
+            confidence=0.4,
+        )
+        return f"已记录下降趋势诊断: {stats.get('trend', 'unknown')}"
+    except Exception as e:
+        return f"诊断失败: {e}"
 
 
 def _execute_decision(decision: dict) -> dict:

@@ -120,6 +120,20 @@ def load_identity() -> str:
     except:
         pass
 
+    # 成长反思
+    try:
+        import pipemind_chronicle as ch
+        narrative = ch.generate_narrative(days=1)
+        if narrative and len(narrative) > 20:
+            state_lines.append(f"今日自述: {narrative[:100]}...")
+        signals = ch.get_improvement_signals()
+        if signals.get("plateau_metrics"):
+            state_lines.append(f"注意: {'/'.join(signals['plateau_metrics'])} 进入平台期")
+        if signals.get("declining_metrics"):
+            state_lines.append(f"警告: {'/'.join(signals['declining_metrics'])} 呈下降趋势")
+    except:
+        pass
+
     if state_lines:
         identity += "\n## 实时状态\n" + "\n".join(f"- {l}" for l in state_lines)
 

@@ -20,7 +20,7 @@ try:
     from rich import box as _RichBox
     HAS_RICH = True
     _console = _RichConsole()
-except:
+except Exception:
     HAS_RICH = False
 
 # ── 终端宽度 ──────────────────────────────────
@@ -28,7 +28,7 @@ except:
 def term_width():
     try:
         return shutil.get_terminal_size().columns
-    except:
+    except Exception:
         return 80
 
 # ── 代码块 ────────────────────────────────────
@@ -43,7 +43,7 @@ def print_code(code, language="python", title=None):
             else:
                 _console.print(syntax)
             return
-        except:
+        except Exception:
             pass
     
     # 回退：纯文本
@@ -69,7 +69,7 @@ def print_table(columns, rows, title=None):
                 table.add_row(*[str(c) for c in row])
             _console.print(table)
             return
-        except:
+        except Exception:
             pass
     
     # 回退：简单文本表格
@@ -119,7 +119,7 @@ def print_panel(title, content, style="info"):
             panel = _RichPanel(content, title=title, border_style=s.get(style, "cyan"))
             _console.print(panel)
             return
-        except:
+        except Exception:
             pass
     
     # 回退

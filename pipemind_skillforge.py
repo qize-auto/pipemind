@@ -104,7 +104,7 @@ def load_registry():
     try:
         with open(REGISTRY_FILE, encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return build_registry()
 
 # ── 搜索 ────────────────────────────────────────
@@ -201,7 +201,7 @@ def delegate_with_skill(task_description, verbose=True):
         api_key = cfg.get("model", {}).get("api_key", "")
         base_url = cfg.get("model", {}).get("base_url", "https://api.deepseek.com/v1").rstrip("/")
         model = cfg.get("model", {}).get("model_name", "deepseek-chat")
-    except:
+    except Exception:
         return {"error": "无法读取 config.json"}
     
     if not api_key:
@@ -249,7 +249,7 @@ def create_skill(task_description):
         api_key = cfg.get("model", {}).get("api_key", "")
         base_url = cfg.get("model", {}).get("base_url", "https://api.deepseek.com/v1").rstrip("/")
         model = cfg.get("model", {}).get("model_name", "deepseek-chat")
-    except:
+    except Exception:
         return {"error": "无法读取 config.json"}
     
     if not api_key:

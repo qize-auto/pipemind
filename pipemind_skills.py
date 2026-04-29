@@ -20,7 +20,7 @@ def _parse_skill(path):
     name = os.path.basename(os.path.dirname(path))
     try:
         content = open(path, encoding="utf-8").read()
-    except:
+    except Exception:
         return None
     
     fp = _fingerprint(name, content)
@@ -113,7 +113,7 @@ def _check_changes():
         try:
             content = open(md, encoding="utf-8").read()
             current[name] = _fingerprint(name, content)
-        except:
+        except Exception:
             continue
     
     if _last_fingerprints and current != _last_fingerprints:
@@ -155,7 +155,7 @@ def start_watcher(interval=5):
             try:
                 content = open(md, encoding="utf-8").read()
                 _last_fingerprints[name] = _fingerprint(name, content)
-            except:
+            except Exception:
                 continue
         
         while _watcher_running:

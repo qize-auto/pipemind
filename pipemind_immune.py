@@ -48,7 +48,7 @@ class ImmuneSystem:
         while self._running:
             try:
                 self._health_check()
-            except:
+            except Exception:
                 pass
             time.sleep(self._check_interval)
 
@@ -58,7 +58,7 @@ class ImmuneSystem:
             from pipemind_core import list_modules, module_stats
             modules = list_modules()
             stats = module_stats()
-        except:
+        except Exception:
             return
 
         for m in modules:
@@ -134,7 +134,7 @@ class ImmuneSystem:
             result = self._call_llm(prompt)
             parsed = json.loads(result) if isinstance(result, str) else result
             return parsed if isinstance(parsed, dict) else {"summary": "诊断失败", "actionable": False}
-        except:
+        except Exception:
             return {"summary": "诊断失败", "actionable": False}
 
     def _heal(self, name: str, diagnosis: dict) -> bool:
@@ -152,7 +152,7 @@ class ImmuneSystem:
                     self._save_quarantine(q)
                 return True
             return False
-        except:
+        except Exception:
             return False
 
     # ── LLM 接口 ──
@@ -167,7 +167,7 @@ class ImmuneSystem:
             ], tools=[])
             if "error" not in result:
                 return result.get("choices", [{}])[0].get("message", {}).get("content", "")
-        except:
+        except Exception:
             pass
         return "{}"
 
@@ -187,7 +187,7 @@ class ImmuneSystem:
             try:
                 with open(IMMUNE_LOG, "r", encoding="utf-8") as f:
                     logs = json.load(f)
-            except:
+            except Exception:
                 pass
         logs.append(event)
         if len(logs) > 200:
@@ -201,7 +201,7 @@ class ImmuneSystem:
         try:
             with open(QUARANTINE_LOG, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return {}
 
     def _save_quarantine(self, data: dict):
@@ -225,7 +225,7 @@ def get_logs(limit=30) -> list:
         with open(IMMUNE_LOG, "r", encoding="utf-8") as f:
             logs = json.load(f)
         return logs[-limit:]
-    except:
+    except Exception:
         return []
 
 

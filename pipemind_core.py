@@ -4,7 +4,7 @@
   from pipemind_core import log, err, register_module, get_module, PIPEMIND_DIR, MEM_DIR
 
 替代:
-  try: except: pass  →  err.safe("模块名", fn)
+  try: except Exception: pass  →  err.safe("模块名", fn)
   print(f"  ✅ ...") →  log.info("模块名", "...")
   PIPEMIND_DIR = ... →  直接用 core 的常量
 """
@@ -79,8 +79,28 @@ class Logger:
             log_file = os.path.join(LOG_DIR, f"{today}.log")
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        except:
+            
+            # 清理 30 天前的旧日志
+            _cleanup_old_logs(30)
+        except Exception:
             pass
+
+
+def _cleanup_old_logs(retain_days=30):
+    """删除超过 retain_days 天的日志文件"""
+    try:
+        cutoff = datetime.date.today() - datetime.timedelta(days=retain_days)
+        for f in os.listdir(LOG_DIR):
+            if not f.endswith(".log"):
+                continue
+            try:
+                file_date = datetime.datetime.strptime(f.replace(".log", ""), "%Y-%m-%d").date()
+                if file_date < cutoff:
+                    os.remove(os.path.join(LOG_DIR, f))
+            except Exception:
+                pass
+    except Exception:
+        pass
 
     def debug(self, msg, **kw):
         self._log("debug", msg, **kw)
@@ -203,7 +223,7 @@ def stop_module(name: str) -> bool:
     if entry["stop_fn"]:
         try:
             entry["stop_fn"]()
-        except:
+        except Exception:
             pass
     entry["status"] = "stopped"
     return True

@@ -150,7 +150,7 @@ def search_with_context(query: str, memory_index: dict = None) -> list[dict]:
             if query_lower in content:
                 name = os.path.basename(fp)[:-3]
                 results.append({"source": "fulltext", "file": name, "score": 30})
-        except: pass
+        except Exception: pass
     
     # 去重排序
     seen = set()

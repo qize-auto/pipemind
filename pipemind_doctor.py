@@ -50,7 +50,7 @@ def check_python() -> list:
         try:
             __import__(mod)
             results.append(_check(f"  {name}", True))
-        except:
+        except Exception:
             results.append(_check(f"  {name}", False, "pip install"))
     return results
 
@@ -78,7 +78,7 @@ def check_daemon() -> list:
             else:
                 results.append(_check(f"  Web 端口 :{port}", False, "无法连接"))
             s.close()
-        except:
+        except Exception:
             results.append(_check("守护进程", False, "PID 文件损坏"))
     else:
         results.append(_check("守护进程", False, "未运行"))
@@ -113,7 +113,7 @@ def check_memory() -> list:
         results.append(_check("记忆系统", True, f"{stats['total']} 条知识"))
         for t, c in stats.get("by_type", {}).items():
             results.append(_check(f"  {t}", True, f"{c} 条"))
-    except:
+    except Exception:
         results.append(_check("记忆系统", False, "模块未加载"))
     return results
 
@@ -129,7 +129,7 @@ def check_self_evolution() -> list:
             f"{perf['total']} 对话 · {perf['avg_duration']}s 平均 · {perf['trend']}"))
         results.append(_check(f"  temp={tune['temperature']}", True,
             f"max_tokens={tune['max_tokens']}"))
-    except:
+    except Exception:
         results.append(_check("本体进化", False))
     return results
 
@@ -142,7 +142,7 @@ def check_decision() -> list:
         logs = dec.get_decision_log(limit=5)
         recent = len([l for l in logs if l.get("actions")])
         results.append(_check("决策引擎", True, f"最近 {recent} 次行动"))
-    except:
+    except Exception:
         results.append(_check("决策引擎", False))
     return results
 
@@ -155,7 +155,7 @@ def check_daily_learn() -> list:
         logs = dl.get_learn_log(days=3)
         learned = sum(l.get("total_learned", 0) for l in logs)
         results.append(_check("每日学习", True, f"近3天吸收 {learned} 项"))
-    except:
+    except Exception:
         results.append(_check("每日学习", False))
     return results
 
@@ -178,7 +178,7 @@ def check_disk() -> list:
             free_gb = (st.f_bavail * st.f_frsize) / (1024**3)
             ok = free_gb > 1
             results.append(_check("磁盘空间", ok, f"{free_gb:.1f} GB 剩余"))
-    except:
+    except Exception:
         results.append(_check("磁盘空间", True, "无法检测"))
     return results
 
@@ -193,7 +193,7 @@ def check_logs() -> list:
             results.append(_check("日志目录", True, f"{count} 个日志文件"))
         else:
             results.append(_check("日志目录", True, "空（尚未写入）"))
-    except:
+    except Exception:
         results.append(_check("日志目录", False))
     return results
 

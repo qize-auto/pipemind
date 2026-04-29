@@ -114,7 +114,7 @@ def _search_files(pattern: str, path: str = ".") -> str:
                     break
             if len(results) >= 30:
                 break
-    except: pass
+    except Exception: pass
     return "\n".join(results[:30]) if results else "(no matches)"
 
 # ═══════════════════════════════════════
@@ -193,12 +193,12 @@ def _send_notification(title: str, message: str) -> str:
         cmd = f'powershell -Command "New-BurntToastNotification -Text \\"{title}\\", \\"{message}\\""'
         subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
         return "✅ Notification sent"
-    except:
+    except Exception:
         # Fallback: msg command
         try:
             subprocess.run(f'msg * "{title}: {message}"', shell=True, capture_output=True, timeout=5)
             return "✅ Notification sent"
-        except:
+        except Exception:
             return "Notification not supported"
 
 def _get_env_var(name: str) -> str:
@@ -589,26 +589,26 @@ def _get_health() -> str:
     try:
         import pipemind_metabolism as m
         return m.get_system_health()
-    except: return "Metabolism module unavailable"
+    except Exception: return "Metabolism module unavailable"
 
 def _get_perf() -> str:
     try:
         import pipemind_metabolism as m
         return m.perf_report()
-    except: return "Perf module unavailable"
+    except Exception: return "Perf module unavailable"
 
 def _run_cleanup() -> str:
     try:
         import pipemind_metabolism as m
         r = m.auto_cleanup(force=True)
         return f"🧹 清理完成: 删除 {r['deleted_files']} 文件, 释放 {r['freed_bytes']/1024:.0f}KB"
-    except: return "Cleanup module unavailable"
+    except Exception: return "Cleanup module unavailable"
 
 def _log_perf(action: str, duration: float):
     try:
         import pipemind_metabolism as m
         m.log_perf(action, duration)
-    except: pass
+    except Exception: pass
 
 register("health_check", _get_health, "检查系统健康度",
     {"type":"object","properties":{}})
@@ -627,7 +627,7 @@ def _get_accuracy() -> str:
     try:
         import pipemind_precision as pr
         return pr.accuracy_report()
-    except: return "Precision module unavailable"
+    except Exception: return "Precision module unavailable"
 
 def _register_pattern(name: str, solution: str, signals: str) -> str:
     try:
@@ -645,7 +645,7 @@ def _find_solution(problem: str) -> str:
         if sol:
             return f"📋 找到方案: {sol['approach']}\n步骤: {chr(10).join(f'  {i+1}. {s}' for i, s in enumerate(sol['steps'][:5]))}"
         return "🔍 未找到匹配方案"
-    except: return "Precision module unavailable"
+    except Exception: return "Precision module unavailable"
 
 register("accuracy_report", _get_accuracy, "查看精准度报告",
     {"type":"object","properties":{}})
@@ -668,43 +668,43 @@ register("find_solution", _find_solution, "查找已知问题的解决方案",
 
 def _reg_read(key: str, value: str = "") -> str:
     try: import pipemind_windows_deep as w; return w.reg_read(key, value)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _reg_write(key: str, name: str, value: str) -> str:
     try: import pipemind_windows_deep as w; return w.reg_write(key, name, value)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _service_list(filter: str = "") -> str:
     try: import pipemind_windows_deep as w; return w.service_list(filter)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _service_action(name: str, action: str) -> str:
     try: import pipemind_windows_deep as w; return w.service_action(name, action)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _event_log(log: str = "System", max: int = 20) -> str:
     try: import pipemind_windows_deep as w; return w.event_log(log, max)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _task_list(filter: str = "") -> str:
     try: import pipemind_windows_deep as w; return w.scheduled_tasks(filter)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _bin_list() -> str:
     try: import pipemind_windows_deep as w; return w.recycle_bin_list()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _bin_empty() -> str:
     try: import pipemind_windows_deep as w; return w.recycle_bin_empty()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _startup_list() -> str:
     try: import pipemind_windows_deep as w; return w.startup_list()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _win_info() -> str:
     try: import pipemind_windows_deep as w; return w.windows_info()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 register("reg_read", _reg_read, "读取 Windows 注册表",
     {"type":"object","properties":{"key":{"type":"string","description":"键路径如 HKLM\\Software\\..."},"value":{"type":"string","description":"值名称","default":""}},"required":["key"]})
@@ -733,27 +733,27 @@ register("windows_info", _win_info, "获取 Windows 系统信息",
 
 def _audit(hours: int = 24) -> str:
     try: import pipemind_security as sec; return sec.audit_report(hours)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _secure_key() -> str:
     try: import pipemind_security as sec; return sec.secure_config()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _backup() -> str:
     try: import pipemind_security as sec; return sec.auto_backup()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _list_backups() -> str:
     try: import pipemind_security as sec; return sec.list_backups()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _reload() -> str:
     try: import pipemind_security as sec; return sec.hot_reload()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _crash() -> str:
     try: import pipemind_security as sec; return sec.get_last_crash()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 register("audit_log", _audit, "查看操作审计日志",
     {"type":"object","properties":{"hours":{"type":"integer","description":"最近几小时","default":24}}})
@@ -788,13 +788,13 @@ def _invention_report() -> str:
     try:
         import pipemind_creative as cr
         return cr.invention_report()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _absorption_report() -> str:
     try:
         import pipemind_creative as cr
         return cr.absorption_report()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _can_handle(task: str) -> str:
     try:
@@ -864,25 +864,25 @@ def _mem_v2_context_search(query: str) -> str:
     try:
         import pipemind_memory_v2 as mv2
         return mv2.search_formatted(query)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _mem_v2_compress() -> str:
     try:
         import pipemind_memory_v2 as mv2
         return mv2.compress_conversation([], 500)
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _mem_v2_worker() -> str:
     try:
         import pipemind_memory_v2 as mv2
         return mv2.worker_status()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 def _mem_v2_hooks() -> str:
     try:
         import pipemind_memory_v2 as mv2
         return mv2.hook_status()
-    except: return "Module unavailable"
+    except Exception: return "Module unavailable"
 
 register("context_search", _mem_v2_context_search, "MCP 风格上下文搜索",
     {"type":"object","properties":{"query":{"type":"string","description":"搜索内容"}},"required":["query"]})
@@ -899,13 +899,13 @@ def _brain_insights() -> str:
     try:
         import pipemind_brain as b
         return b._metacog.get_insights()
-    except: return "Brain module unavailable"
+    except Exception: return "Brain module unavailable"
 
 def _brain_skills() -> str:
     try:
         import pipemind_brain as b
         return b._skills.get_skill_commands()
-    except: return "Brain module unavailable"
+    except Exception: return "Brain module unavailable"
 
 def _brain_think(goal: str, steps: str) -> str:
     try:
@@ -918,7 +918,7 @@ def _brain_think(goal: str, steps: str) -> str:
         for opt in r['optimization']:
             lines.append(f"💡 {opt}")
         return "\n".join(lines)
-    except: return "Brain module unavailable"
+    except Exception: return "Brain module unavailable"
 
 register("brain_insights", _brain_insights, "查看近期思考洞察",
     {"type":"object","properties":{}})

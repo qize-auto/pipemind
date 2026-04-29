@@ -203,7 +203,7 @@ def is_admin() -> bool:
     """检查是否管理员"""
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except:
+    except Exception:
         return False
 
 def elevate(script_path: str = "") -> str:
@@ -229,7 +229,7 @@ def get_proxy() -> dict:
             enabled = winreg.QueryValueEx(key, "ProxyEnable")[0]
             server = winreg.QueryValueEx(key, "ProxyServer")[0] if enabled else ""
             return {"enabled": bool(enabled), "server": server}
-    except:
+    except Exception:
         return {"enabled": False, "server": ""}
 
 def set_proxy(server: str) -> str:

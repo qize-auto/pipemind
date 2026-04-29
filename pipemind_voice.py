@@ -7,7 +7,7 @@ _has_speech = False
 try:
     import speech_recognition as sr
     _has_speech = True
-except:
+except Exception:
     pass
 
 
@@ -32,7 +32,7 @@ $tts.Speak("{text.Replace('"', '""')}")
                            os.path.join(tempfile.gettempdir(), "pipemind_tts.mp3")],
                           capture_output=True, timeout=15)
             return f"🔊 [{ts}] 已生成语音"
-        except:
+        except Exception:
             return f"❌ TTS 不可用: {e}"
 
 
@@ -74,7 +74,7 @@ def listen_loop(callback, timeout: int = 5):
                     yield text
                 except sr.WaitTimeoutError:
                     continue
-                except:
+                except Exception:
                     continue
     except Exception as e:
         yield f"❌ {e}"

@@ -143,7 +143,7 @@ def _load_knowledge():
     try:
         with open(KNOWLEDGE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -153,7 +153,7 @@ def _load_links():
     try:
         with open(LINKS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -165,7 +165,7 @@ def _get_last_consolidation():
         with open(log_path, "r", encoding="utf-8") as f:
             logs = json.load(f)
         return logs[-1].get("time", "")[:16] if logs else None
-    except:
+    except Exception:
         return None
 
 

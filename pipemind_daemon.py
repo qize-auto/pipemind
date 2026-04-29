@@ -46,7 +46,7 @@ def reset_agent():
     if _agent is not None:
         try:
             _agent.save()
-        except:
+        except Exception:
             pass
     _agent = None
 
@@ -67,7 +67,7 @@ def _cleanup_pid():
     if os.path.exists(PID_FILE):
         try:
             os.remove(PID_FILE)
-        except:
+        except Exception:
             pass
 
 
@@ -89,7 +89,7 @@ def is_running():
         else:
             os.kill(info["pid"], 0)
             return True
-    except:
+    except Exception:
         pass
     _cleanup_pid()
     return False
@@ -115,7 +115,7 @@ def stop_daemon():
             urllib.request.urlopen(req, timeout=5)
             time.sleep(1)
             return True, "已发送停止信号"
-        except:
+        except Exception:
             # HTTP 不通，直接杀进程
             if sys.platform == "win32":
                 os.system(f"taskkill /F /PID {info['pid']} >nul 2>&1")
@@ -294,7 +294,7 @@ def _start_consolidation_timer():
                         print(f"  📖 生命快照已记录 ({today})")
                     except Exception as e:
                         print(f"  ⚠ 生命快照失败: {e}")
-            except:
+            except Exception:
                 pass
             time.sleep(3600)  # 每小时检查一次
 

@@ -35,7 +35,7 @@ def _encode(texts):
         return None
     try:
         return _encoder.encode(texts, normalize_embeddings=True)
-    except:
+    except Exception:
         return None
 
 # ── 建立索引 ──────────────────────────────────
@@ -52,7 +52,7 @@ def _collect_texts():
             name = os.path.basename(os.path.dirname(md))
             texts.append(f"[{name}] {content[:500]}")
             sources.append({"type": "skill", "name": name, "path": md})
-        except:
+        except Exception:
             pass
     
     # 2. memory 文件
@@ -61,14 +61,14 @@ def _collect_texts():
             content = json.load(open(fp, encoding="utf-8"))
             texts.append(str(content)[:500])
             sources.append({"type": "memory", "path": fp})
-        except:
+        except Exception:
             pass
     for fp in glob.glob(os.path.join(MEMORY_DIR, "*.md")):
         try:
             content = open(fp, encoding="utf-8").read()
             texts.append(content[:500])
             sources.append({"type": "memory_md", "path": fp})
-        except:
+        except Exception:
             pass
     
     # 3. dreams
@@ -79,7 +79,7 @@ def _collect_texts():
                 content = json.load(open(fp, encoding="utf-8"))
                 texts.append(str(content)[:500])
                 sources.append({"type": "dream", "path": fp})
-            except:
+            except Exception:
                 pass
     
     return texts, sources
@@ -128,7 +128,7 @@ def search(query, top_k=5):
     try:
         with open(INDEX_FILE, "rb") as f:
             index = pickle.load(f)
-    except:
+    except Exception:
         return []
     
     q_vec = _encode([query])

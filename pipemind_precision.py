@@ -15,7 +15,7 @@ def _load_patterns() -> dict:
         try:
             with open(PATTERNS_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return {"patterns": [], "stats": {"total": 0, "success": 0, "fail": 0}}
 
 def _save_patterns(data: dict):
@@ -97,7 +97,7 @@ def _load_solutions() -> dict:
         try:
             with open(SOLUTIONS_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return {"solutions": []}
 
 def _save_solutions(data: dict):

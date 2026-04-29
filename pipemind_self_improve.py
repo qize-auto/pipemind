@@ -47,7 +47,7 @@ def review_code(filepath: str = None) -> list[dict]:
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 content = fh.read()
-        except:
+        except Exception:
             continue
 
         suggestions = _llm_review(f, content)
@@ -87,7 +87,7 @@ def _llm_review(filepath: str, content: str) -> list[dict]:
         for item in items:
             item["file"] = filename
         return items
-    except:
+    except Exception:
         return []
 
 
@@ -116,7 +116,7 @@ def optimize_prompts() -> list[dict]:
 
         result = _call_llm(prompt)
         return _parse_json_result(result) or []
-    except:
+    except Exception:
         return []
 
 
@@ -140,7 +140,7 @@ def suggest_new_skills() -> list[dict]:
                             desc = line.split(":", 1)[1].strip().strip("\"'")
                             break
                 existing.append({"name": name, "desc": desc})
-            except:
+            except Exception:
                 pass
 
     prompt = f"""你是一个 AI Agent 技能设计师。分析现有技能列表，建议 3 个新技能。
@@ -159,7 +159,7 @@ def suggest_new_skills() -> list[dict]:
     try:
         result = _call_llm(prompt)
         return _parse_json_result(result) or []
-    except:
+    except Exception:
         return []
 
 
@@ -175,7 +175,7 @@ def analyze_performance() -> list[dict]:
         import pipemind_self_evolution as se
         p = se.PerformanceTracker.stats(days=7)
         perf_data = p
-    except:
+    except Exception:
         pass
 
     prompt = f"""你是一个系统性能分析师。分析以下 AI Agent 的性能数据，提出优化建议。
@@ -195,7 +195,7 @@ def analyze_performance() -> list[dict]:
     try:
         result = _call_llm(prompt)
         return _parse_json_result(result) or []
-    except:
+    except Exception:
         return []
 
 
@@ -321,7 +321,7 @@ def _call_llm(prompt: str) -> str:
         ], tools=[])
         if "error" not in result:
             return result.get("choices", [{}])[0].get("message", {}).get("content", "")
-    except:
+    except Exception:
         pass
     return "[]"
 
@@ -334,7 +334,7 @@ def _parse_json_result(text: str) -> list:
             items = json.loads(m.group())
             if isinstance(items, list):
                 return items
-        except:
+        except Exception:
             pass
     return []
 
@@ -346,7 +346,7 @@ def _save_log(cycle: dict):
         try:
             with open(LOG_FILE, "r", encoding="utf-8") as f:
                 logs = json.load(f)
-        except:
+        except Exception:
             pass
     logs.append(cycle)
     if len(logs) > 50:
@@ -363,7 +363,7 @@ def get_logs(limit=10) -> list:
         with open(LOG_FILE, "r", encoding="utf-8") as f:
             logs = json.load(f)
         return logs[-limit:]
-    except:
+    except Exception:
         return []
 
 

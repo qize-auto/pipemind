@@ -213,16 +213,16 @@ def _get_stats():
             from pipemind_core import module_stats
             ms = module_stats()
             result["errors"] = ms.get("errored", 0)
-        except:
+        except Exception:
             pass
-    except:
+    except Exception:
         pass
 
     # 知识
     try:
         import pipemind_memory_evolution as me
         result["knowledge"] = me.get_stats().get("total", 0)
-    except:
+    except Exception:
         pass
 
     # 守护进程状态
@@ -236,7 +236,7 @@ def _get_stats():
             h = int(uptime_sec // 3600)
             m = int((uptime_sec % 3600) // 60)
             result["uptime"] = f"{h}h{m}m"
-        except:
+        except Exception:
             pass
 
     # 弈辛状态
@@ -245,7 +245,7 @@ def _get_stats():
         s = wsl.get_monitor().status
         result["yixin_connected"] = s.get("connected", False)
         result["model"] = s.get("model", "—")
-    except:
+    except Exception:
         pass
 
     return result
@@ -875,7 +875,7 @@ def api_immune_logs():
     try:
         import pipemind_immune as imm
         return jsonify(imm.get_logs(limit=50))
-    except:
+    except Exception:
         return jsonify([])
 
 
@@ -884,7 +884,7 @@ def api_immune_quarantine():
     try:
         import pipemind_immune as imm
         return jsonify(imm.get_quarantine())
-    except:
+    except Exception:
         return jsonify({})
 
 
@@ -896,7 +896,7 @@ def api_immune_health():
         h = imm.get_health_summary()
         h["healthy_modules"] = module_stats()
         return jsonify(h)
-    except:
+    except Exception:
         return jsonify({"error": "unavailable"})
 
 @app.route("/home")
@@ -922,13 +922,13 @@ def api_home_scan():
                 if s.connect_ex((ip, 9788)) == 0:
                     found.append({"name": f"PM@{ip}", "host": ip, "online": True})
                 s.close()
-            except:
+            except Exception:
                 pass
     known = {"homes": []}
     if os.path.exists(known_file):
         try:
             known = json.load(open(known_file))
-        except:
+        except Exception:
             pass
     for f in found:
         if not any(h["host"] == f["host"] for h in known["homes"]):
@@ -956,7 +956,7 @@ def api_home_add():
     if os.path.exists(known_file):
         try:
             known = json.load(open(known_file))
-        except:
+        except Exception:
             pass
     entry = {"name": home_id, "host": host, "port": int(port), "online": True, "tags": "manual", "last_seen": datetime.datetime.now().isoformat()}
     existing = [h for h in known["homes"] if h.get("name") == home_id or (h.get("host") == host and h.get("port") == int(port))]
@@ -976,7 +976,7 @@ def providers_page():
         try:
             cfg = json.load(open(cfg_file))
             providers = cfg.get("providers", [])
-        except: pass
+        except Exception: pass
     rows = "\n".join(
         f"<tr><td>{'🟢' if p.get('api_key') else '🔴'}</td><td>{p.get('name','?')}</td><td>{p.get('model','?')}</td><td>{p.get('base_url','?')[:40]}</td><td>{p.get('priority','?')}</td></tr>"
         for p in providers
@@ -1049,7 +1049,7 @@ def memory_page():
         import pipemind_memory_evolution as evo
         stats = evo.get_stats()
         logs = evo.get_consolidation_log(days=7)
-    except:
+    except Exception:
         stats = {"total": 0, "by_type": {}, "top": []}
         logs = []
 
@@ -1158,7 +1158,7 @@ def yixin_page():
         s = mon.status
         presets = wsl.get_presets()
         events = wsl.get_events(limit=30)
-    except:
+    except Exception:
         s = {"running": False, "model": "?", "connected": False}
         presets = []
         events = []
@@ -1400,7 +1400,7 @@ def evolution_page():
         tuning = se.SelfTuner.get_config()
         lessons = se.AutoLearner._load()
         reports = se.get_recent_reports(days=7)
-    except:
+    except Exception:
         summary = "系统初始化中"
         perf = {"total": 0, "avg_duration": 0, "trend": "unknown"}
         tuning = {}
@@ -1569,7 +1569,7 @@ def learn_page():
         import pipemind_daily_learn as dl
         logs = dl.get_learn_log(days=7)
         skills = dl.get_learned_skills()
-    except:
+    except Exception:
         logs = []
         skills = []
 
@@ -1653,7 +1653,7 @@ def decisions_page():
         import pipemind_decision as dec
         state = dec.get_current_state()
         logs = dec.get_decision_log(limit=20)
-    except:
+    except Exception:
         state = {}
         logs = []
 
@@ -1779,7 +1779,7 @@ def status_page():
         modules = list_modules()
         stats = module_stats()
         logs = get_recent_logs(limit=30)
-    except:
+    except Exception:
         modules = []
         stats = {"total": 0, "running": 0, "errored": 0}
         logs = []
@@ -2174,7 +2174,7 @@ def run(port=9090, daemon_mode=False):
     try:
         if not daemon_mode:
             webbrowser.open(f"http://localhost:{port}")
-    except:
+    except Exception:
         pass
 
     app.run(host="0.0.0.0", port=port, debug=False)
@@ -2188,7 +2188,7 @@ def main():
         if idx < len(sys.argv):
             try:
                 port = int(sys.argv[idx])
-            except:
+            except Exception:
                 pass
     run(port=port)
 

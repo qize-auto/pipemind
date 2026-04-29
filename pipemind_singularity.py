@@ -46,7 +46,7 @@ def load_profile() -> dict:
         profile["last_seen"] = datetime.datetime.now().isoformat()
         _save_profile(profile)
         return profile
-    except:
+    except Exception:
         return _generate_profile()
 
 
@@ -80,7 +80,7 @@ def _scan_capabilities() -> list:
         modules = len([f for f in os.listdir(PIPEMIND_DIR)
                        if f.startswith("pipemind_") and f.endswith(".py")])
         caps.append({"name": "modules", "value": modules})
-    except:
+    except Exception:
         pass
 
     # 技能数
@@ -88,7 +88,7 @@ def _scan_capabilities() -> list:
         import glob
         skills = len(glob.glob(os.path.join(PIPEMIND_DIR, "skills", "**", "SKILL.md"), recursive=True))
         caps.append({"name": "skills", "value": skills})
-    except:
+    except Exception:
         pass
 
     # 知识量
@@ -97,7 +97,7 @@ def _scan_capabilities() -> list:
         stats = me.get_stats()
         caps.append({"name": "knowledge", "value": stats.get("total", 0)})
         caps.append({"name": "knowledge_types", "value": dict(stats.get("by_type", {}))})
-    except:
+    except Exception:
         pass
 
     # 进化阶段
@@ -113,7 +113,7 @@ def _scan_capabilities() -> list:
         caps.append({"name": "conversations_7d", "value": p.get("total", 0)})
         caps.append({"name": "avg_response_time", "value": p.get("avg_duration", 0)})
         caps.append({"name": "trend", "value": p.get("trend", "stable")})
-    except:
+    except Exception:
         pass
 
     return caps
@@ -169,7 +169,7 @@ def _load_feeds() -> list:
     try:
         with open(FEEDS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -198,7 +198,7 @@ def get_network_homes() -> list:
             with open(home_known_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             known = data.get("homes", [])
-        except:
+        except Exception:
             pass
     return known
 
@@ -217,7 +217,7 @@ def get_network_stats() -> dict:
     try:
         import pipemind_memory_evolution as me
         knowledge_total = me.get_stats().get("total", 0)
-    except:
+    except Exception:
         pass
 
     return {

@@ -27,7 +27,7 @@ def _load_nudges():
     try:
         with open(NUDGE_FILE) as f:
             return json.load(f)
-    except:
+    except Exception:
         return {"nudges": []}
 
 def _save_nudges(data):
@@ -46,7 +46,7 @@ def _expire_old():
             try:
                 if datetime.datetime.fromisoformat(expires) < now:
                     continue
-            except:
+            except Exception:
                 pass
         active.append(n)
     data["nudges"] = active
@@ -107,7 +107,7 @@ def light_sleep():
                         signals.append({"type": typ, "snippet": line[:120],
                                         "source": os.path.basename(fp)})
                         break
-        except:
+        except Exception:
             pass
     
     # 2. 从 lessons 中提取
@@ -120,7 +120,7 @@ def light_sleep():
                     signals.append({"type": "lesson",
                                     "snippet": str(l["lesson"])[:120],
                                     "source": "lessons"})
-        except:
+        except Exception:
             pass
     
     # 3. 写入今天的光信号
@@ -130,7 +130,7 @@ def light_sleep():
     if os.path.exists(signal_file):
         try:
             existing = json.load(open(signal_file, encoding="utf-8"))
-        except:
+        except Exception:
             pass
     
     # 去重

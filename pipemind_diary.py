@@ -12,7 +12,7 @@ def _load_diary() -> list:
         try:
             with open(DIARY_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return []
 
 def _save_diary(entries: list):
@@ -83,7 +83,7 @@ def get_mood() -> str:
         try:
             with open(MOOD_FILE, "r") as f:
                 return json.load(f).get("emotion", _EMOTIONS[0])
-        except: pass
+        except Exception: pass
     return _EMOTIONS[0]
 
 def analyze_emotion(conversation: list) -> str:

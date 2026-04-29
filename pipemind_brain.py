@@ -55,7 +55,7 @@ class ContextManager:
                 if inject_text:
                     name = os.path.basename(os.path.dirname(md))
                     injections.append(f"### {name}\n" + "\n".join(inject_text).strip())
-            except:
+            except Exception:
                 pass
         return "\n\n".join(injections[:5]) if injections else ""
     
@@ -70,7 +70,7 @@ class ContextManager:
                     continue
                 content = open(fp, "r", encoding="utf-8").read()[:200]
                 memories.append(f"  {name}: {content}")
-            except:
+            except Exception:
                 pass
         return "\n".join(memories) if memories else ""
     
@@ -174,7 +174,7 @@ class SkillEngine:
                     "commands": commands,
                     "content": content[:1000]
                 }
-            except:
+            except Exception:
                 pass
     
     def get_skill_commands(self) -> str:

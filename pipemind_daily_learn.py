@@ -80,7 +80,7 @@ def _list_yixin_skills() -> list[dict]:
             name = os.path.basename(os.path.dirname(path))
             desc = _read_yixin_skill_desc(path)
             skills.append({"name": name, "desc": desc, "path": path})
-    except:
+    except Exception:
         pass
     return skills
 
@@ -96,7 +96,7 @@ def _read_yixin_skill_desc(wsl_path: str) -> str:
         for line in out.stdout.split("\n"):
             if line.strip().startswith("description:"):
                 return line.split(":", 1)[1].strip().strip("\"'")
-    except:
+    except Exception:
         pass
     return ""
 
@@ -165,7 +165,7 @@ def learn_from_tools() -> dict:
     try:
         with open(perf_file, "r", encoding="utf-8") as f:
             history = json.load(f)
-    except:
+    except Exception:
         return result
 
     recent = [r for r in history if r.get("time", "").startswith(datetime.date.today().isoformat())]
@@ -199,7 +199,7 @@ def learn_from_tools() -> dict:
             try:
                 with open(PATTERNS_FILE, "r", encoding="utf-8") as f:
                     existing = json.load(f)
-            except:
+            except Exception:
                 pass
 
         pattern = {
@@ -240,7 +240,7 @@ def learn_from_github() -> dict:
     try:
         with open(cache_file, "r", encoding="utf-8") as f:
             cache = json.load(f)
-    except:
+    except Exception:
         return result
 
     # 检查每个源的最后更新时间和技能数
@@ -315,7 +315,7 @@ def daily_learn() -> dict:
         try:
             with open(LEARN_LOG_FILE, "r", encoding="utf-8") as f:
                 logs = json.load(f)
-        except:
+        except Exception:
             pass
     logs.append(log)
     if len(logs) > 30:
@@ -337,7 +337,7 @@ def _save_lessons(lessons: list):
                 l.get("lesson", ""),
                 l.get("confidence", 0.3),
             )
-    except:
+    except Exception:
         pass
 
 
@@ -353,7 +353,7 @@ def get_learn_log(days=7) -> list:
         with open(LEARN_LOG_FILE, "r", encoding="utf-8") as f:
             logs = json.load(f)
         return logs[-days:]
-    except:
+    except Exception:
         return []
 
 
@@ -369,7 +369,7 @@ def get_learned_skills() -> list:
                     if line.strip().startswith("description:"):
                         desc = line.split(":", 1)[1].strip().strip("\"'")
                         break
-        except:
+        except Exception:
             pass
         skills.append({"name": name, "desc": desc})
     return skills

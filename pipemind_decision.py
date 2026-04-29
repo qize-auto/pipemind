@@ -53,7 +53,7 @@ def _scan_memory() -> dict:
             "by_type": stats.get("by_type", {}),
             "top_importance": stats.get("avg_importance", 0),
         }
-    except:
+    except Exception:
         return {"total": 0}
 
 
@@ -68,7 +68,7 @@ def _scan_performance() -> dict:
             "error_rate": p.get("error_rate", 0),
             "trend": p.get("trend", "unknown"),
         }
-    except:
+    except Exception:
         return {}
 
 
@@ -83,7 +83,7 @@ def _scan_yixin() -> dict:
             "model": s.get("model", "?"),
             "fail_count": s.get("fail_count", 0),
         }
-    except:
+    except Exception:
         return {"running": False}
 
 
@@ -96,7 +96,7 @@ def _scan_learning() -> dict:
             "today_learned": logs[0].get("total_learned", 0) if logs else 0,
             "has_pending": bool(logs),
         }
-    except:
+    except Exception:
         return {"today_learned": 0}
 
 
@@ -112,7 +112,7 @@ def _scan_chronicle() -> dict:
             "declining": signals.get("declining_metrics", []),
             "age_days": summary.get("age_days", 0),
         }
-    except:
+    except Exception:
         return {"trend": "unknown", "plateau": [], "declining": []}
 
 
@@ -127,7 +127,7 @@ def _scan_system() -> dict:
             with open(pid_file) as f:
                 info = json.load(f)
             uptime = time.time() - info.get("started", time.time())
-        except:
+        except Exception:
             pass
     return {
         "uptime_hours": round(uptime / 3600, 1) if uptime > 0 else 0,
@@ -263,13 +263,13 @@ def _handle_maintenance():
         import pipemind_memory_evolution as me
         n = me.forget_old()
         actions.append(f"归档 {n} 条")
-    except:
+    except Exception:
         pass
     try:
         import pipemind_session as pms
         pms.cleanup()
         actions.append("清理会话")
-    except:
+    except Exception:
         pass
     return "维护完成: " + "; ".join(actions) if actions else "无维护项"
 
@@ -365,7 +365,7 @@ def decision_cycle() -> dict:
         try:
             with open(DECISION_LOG, "r", encoding="utf-8") as f:
                 logs = json.load(f)
-        except:
+        except Exception:
             pass
     logs.append(cycle)
     if len(logs) > 100:
@@ -432,7 +432,7 @@ def get_decision_log(limit=20) -> list:
         with open(DECISION_LOG, "r", encoding="utf-8") as f:
             logs = json.load(f)
         return logs[-limit:]
-    except:
+    except Exception:
         return []
 
 

@@ -40,7 +40,7 @@ def _create_icon():
     # PM 文字（白色，居中）
     try:
         font = ImageFont.truetype("segoeui.ttf", 14)
-    except:
+    except Exception:
         font = ImageFont.load_default()
     bbox = draw.textbbox((0, 0), "PM", font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -60,7 +60,7 @@ def _api_get(path):
         req = urllib.request.Request(_api_url(path))
         resp = urllib.request.urlopen(req, timeout=3)
         return json.loads(resp.read().decode())
-    except:
+    except Exception:
         return None
 
 
@@ -74,7 +74,7 @@ def _api_post(path):
         )
         resp = urllib.request.urlopen(req, timeout=5)
         return json.loads(resp.read().decode())
-    except:
+    except Exception:
         return None
 
 

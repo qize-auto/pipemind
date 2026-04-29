@@ -53,7 +53,7 @@ def _count_modules() -> int:
     try:
         return len([f for f in os.listdir(PIPEMIND_DIR)
                     if f.startswith("pipemind_") and f.endswith(".py")])
-    except:
+    except Exception:
         return 0
 
 
@@ -68,7 +68,7 @@ def _get_knowledge_count() -> int:
     try:
         import pipemind_memory_evolution as me
         return me.get_stats().get("total", 0)
-    except:
+    except Exception:
         return 0
 
 
@@ -76,7 +76,7 @@ def _get_conversations_today() -> int:
     try:
         import pipemind_self_evolution as se
         return se.PerformanceTracker.stats(days=1).get("total", 0)
-    except:
+    except Exception:
         return 0
 
 
@@ -84,7 +84,7 @@ def _get_avg_response_time() -> float:
     try:
         import pipemind_self_evolution as se
         return se.PerformanceTracker.stats(days=1).get("avg_duration", 0)
-    except:
+    except Exception:
         return 0
 
 
@@ -92,7 +92,7 @@ def _get_error_rate() -> float:
     try:
         import pipemind_self_evolution as se
         return se.PerformanceTracker.stats(days=1).get("error_rate", 0)
-    except:
+    except Exception:
         return 0
 
 
@@ -100,7 +100,7 @@ def _get_trend() -> str:
     try:
         import pipemind_self_evolution as se
         return se.PerformanceTracker.stats(days=7).get("trend", "stable")
-    except:
+    except Exception:
         return "stable"
 
 
@@ -205,7 +205,7 @@ def generate_narrative(days=7) -> str:
     try:
         result = _call_llm(prompt)
         return result.strip().strip("\"'")
-    except:
+    except Exception:
         return "（叙事生成失败）"
 
 
@@ -248,7 +248,7 @@ def reflect(days=7) -> dict:
         result = _call_llm(prompt)
         parsed = json.loads(result) if isinstance(result, str) else result
         return parsed
-    except:
+    except Exception:
         return {"insights": ["分析失败"], "priorities": [], "recommendations": []}
 
 
@@ -348,7 +348,7 @@ def get_injection() -> str:
             )
 
         return "\n".join(parts)
-    except:
+    except Exception:
         return ""
 
 
@@ -362,7 +362,7 @@ def _load_chronicle() -> list:
     try:
         with open(CHRONICLE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -378,7 +378,7 @@ def _load_milestones() -> list:
     try:
         with open(MILESTONES_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -398,7 +398,7 @@ def _call_llm(prompt: str) -> str:
         ], tools=[])
         if "error" not in result:
             return result.get("choices", [{}])[0].get("message", {}).get("content", "")
-    except:
+    except Exception:
         pass
     return ""
 

@@ -38,13 +38,13 @@ def get_public_ip():
                                      headers={"User-Agent": "curl/8.0"})
         resp = json.loads(urllib.request.urlopen(req, timeout=10).read().decode())
         return resp.get("ip", "unknown")
-    except:
+    except Exception:
         try:
             req = urllib.request.Request("https://httpbin.org/ip",
                                          headers={"User-Agent": "curl/8.0"})
             resp = json.loads(urllib.request.urlopen(req, timeout=10).read().decode())
             return resp.get("origin", "unknown")
-        except:
+        except Exception:
             return "unknown"
 
 def generate_connect_string(home_id, host, port, public=False):
@@ -88,7 +88,7 @@ def generate_home_id():
     try:
         import uuid
         hw = str(uuid.getnode())  # MAC 地址
-    except:
+    except Exception:
         hw = str(random.getrandbits(48))
     salt = str(random.getrandbits(32))
     raw = hashlib.sha256(f"{hw}{salt}".encode()).hexdigest()[:8]
@@ -112,7 +112,7 @@ def _load_state():
         try:
             with open(HOME_FILE) as f:
                 return {**default, **json.load(f)}
-        except:
+        except Exception:
             pass
     return default
 
@@ -137,7 +137,7 @@ def _save_harvest(entry):
         try:
             with open(HARVEST_FILE) as f:
                 data = json.load(f)
-        except:
+        except Exception:
             pass
     data["entries"].append(entry)
     data["entries"] = data["entries"][-100:]  # 最多保留 100 条
@@ -223,12 +223,12 @@ class HomeServer:
         for addr, info in list(self.clients.items()):
             try:
                 info["conn"].close()
-            except:
+            except Exception:
                 pass
         self.clients.clear()
         if self.sock:
             try: self.sock.close()
-            except: pass
+            except Exception: pass
     
     def stop(self):
         global _server_running
@@ -285,7 +285,7 @@ class HomeServer:
                 
                 try:
                     msg = json.loads(data)
-                except:
+                except Exception:
                     continue
                 
                 msg_type = msg.get("type", "")
@@ -374,7 +374,7 @@ class HomeServer:
         finally:
             try:
                 conn.close()
-            except:
+            except Exception:
                 pass
             with self.lock:
                 self.clients.pop(client_addr, None)
@@ -388,14 +388,14 @@ class HomeServer:
             if not data:
                 return None
             return data.decode("utf-8", errors="replace").strip()
-        except:
+        except Exception:
             return None
     
     def _send(self, conn, msg):
         """发送 JSON 消息"""
         try:
             conn.sendall((json.dumps(msg) + "\n").encode())
-        except:
+        except Exception:
             pass
     
     def _broadcast(self, msg, exclude=None):
@@ -405,7 +405,7 @@ class HomeServer:
                 continue
             try:
                 self._send(info["conn"], msg)
-            except:
+            except Exception:
                 pass
 
 # ── 访客客户端 ────────────────────────────────
@@ -434,7 +434,7 @@ class HomeVisitor:
                 import pipemind_evolution as evo
                 v = evo.vital_signs()
                 skills = v.get("skills", 0)
-            except:
+            except Exception:
                 skills = 0
             
             self._send({
@@ -479,7 +479,7 @@ class HomeVisitor:
                         self.harvest.append(resp)
                 except socket.timeout:
                     break
-                except:
+                except Exception:
                     break
             
             # 告别
@@ -500,12 +500,12 @@ class HomeVisitor:
         finally:
             if self.sock:
                 try: self.sock.close()
-                except: pass
+                except Exception: pass
     
     def _send(self, msg):
         try:
             self.sock.sendall((json.dumps(msg) + "\n").encode())
-        except:
+        except Exception:
             pass
     
     def _recv(self):
@@ -514,7 +514,7 @@ class HomeVisitor:
             if not data:
                 return None
             return json.loads(data.decode("utf-8", errors="replace").strip())
-        except:
+        except Exception:
             return None
 
 # ── 工具函数 ──────────────────────────────────
@@ -525,7 +525,7 @@ def _load_harvest():
             with open(HARVEST_FILE) as f:
                 data = json.load(f)
             return data.get("entries", [])
-        except:
+        except Exception:
             pass
     return []
 
@@ -545,7 +545,7 @@ def main():
         for i, a in enumerate(args):
             if a == "--port" and i + 1 < len(args):
                 try: port = int(args[i + 1])
-                except: pass
+                except Exception: pass
         
         server = HomeServer(port=port, public=is_public)
         

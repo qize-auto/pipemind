@@ -52,7 +52,7 @@ def load() -> dict:
                     if k2 not in cfg[k]:
                         cfg[k][k2] = v2
         return cfg
-    except:
+    except Exception:
         return dict(_DEFAULTS)
 
 

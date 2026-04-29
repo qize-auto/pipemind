@@ -15,7 +15,7 @@ def _load_inventions() -> list:
         try:
             with open(INVENTIONS_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return []
 
 def _save_inventions(data: list):
@@ -72,7 +72,7 @@ def _load_absorbed() -> list:
         try:
             with open(ABSORPTION_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return []
 
 def _save_absorbed(data: list):

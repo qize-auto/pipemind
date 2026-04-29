@@ -11,7 +11,7 @@ def _load_index() -> dict:
         try:
             with open(INDEX_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return {"memories": [], "tags": {}}
 
 def _save_index(index: dict):
@@ -85,7 +85,7 @@ def search(query: str) -> list[dict]:
                     content = open(fp, "r", encoding="utf-8").read().lower()
                     if q in content:
                         results.append((e, 30))
-                except: pass
+                except Exception: pass
     
     results.sort(key=lambda x: x[1], reverse=True)
     return results[:10]
@@ -105,7 +105,7 @@ def search_text(query: str) -> str:
             try:
                 content = open(fp, "r", encoding="utf-8").read()[:100].replace("\n", " ")
                 preview = f" — {content}"
-            except: pass
+            except Exception: pass
         lines.append(f"  [{score}%] {e['key']}{preview}")
     return "\n".join(lines)
 

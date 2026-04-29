@@ -1,0 +1,8 @@
+# PipeMind 依赖清单
+# 生成: pip freeze | grep -E "Flask|Pillow|pystray|sentence-transformers"
+# 最小依赖: flask pillow pystray
+
+Flask>=3.0
+Pillow>=10.0
+pystray>=0.19
+sentence-transformers>=2.2  # 可选，用于向量记忆

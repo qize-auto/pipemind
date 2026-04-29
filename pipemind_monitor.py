@@ -13,7 +13,7 @@ def _load_monitors() -> list:
         try:
             with open(MONITOR_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return []
 
 def _save_monitors(monitors: list):
@@ -80,7 +80,7 @@ def _load_tasks() -> list:
         try:
             with open(TASK_FILE, "r") as f:
                 return json.load(f)
-        except: pass
+        except Exception: pass
     return []
 
 def _save_tasks(tasks: list):

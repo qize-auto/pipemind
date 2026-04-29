@@ -13,7 +13,7 @@ SOUL_FILE = os.path.join(PIPEMIND_DIR, "SOUL.md")
 try:
     import pipemind_metabolism as metabolism
     HAS_METABOLISM = True
-except:
+except Exception:
     HAS_METABOLISM = False
 
 
@@ -25,7 +25,7 @@ def load_lessons() -> list[dict]:
         try:
             with open(LESSONS_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
     return []
 
@@ -163,7 +163,7 @@ def evolution_cycle(agent_self) -> dict:
             metabolism.auto_cleanup()
             health = metabolism.get_system_health()
             report["insights"].append(health)
-        except:
+        except Exception:
             pass
 
     # 检查是否有未完成的进化任务
@@ -181,7 +181,7 @@ def load_evolution_tasks() -> list[dict]:
         try:
             with open(tasks_file, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
     return []
 
@@ -209,7 +209,7 @@ def vital_signs() -> dict:
     try:
         import pipemind_tools as t
         tool_count = len(t.get_all_schemas())
-    except:
+    except Exception:
         tool_count = 0
 
     # 记忆数量

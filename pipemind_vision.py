@@ -89,7 +89,7 @@ def _get_model_config() -> dict:
         if m.get("api_key"):
             return m
         return None
-    except:
+    except Exception:
         return None
 
 

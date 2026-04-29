@@ -45,7 +45,7 @@ def load_providers():
     try:
         with open(CONFIG_PATH, encoding="utf-8") as f:
             cfg = json.load(f)
-    except:
+    except Exception:
         cfg = {}
     
     providers = cfg.get("providers", [])
@@ -72,7 +72,7 @@ def save_providers(providers):
     try:
         with open(CONFIG_PATH, encoding="utf-8") as f:
             cfg = json.load(f)
-    except:
+    except Exception:
         cfg = {}
     
     cfg["providers"] = providers
@@ -215,7 +215,7 @@ def detect_ollama():
         resp = json.loads(urllib.request.urlopen(req, timeout=5).read().decode())
         models = [m["name"] for m in resp.get("models", [])]
         return models
-    except:
+    except Exception:
         return []
 
 def add_ollama_provider():
@@ -277,7 +277,7 @@ def main():
                 providers.insert(0, selected)
                 save_providers(providers)
                 print(f"  ✅ 已切换至: {selected['name']}")
-        except:
+        except Exception:
             print("  ❌ 无效输入")
     
     elif "--test" in args:

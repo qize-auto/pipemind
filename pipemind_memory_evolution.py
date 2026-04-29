@@ -63,7 +63,7 @@ def extract_knowledge(session_messages: list) -> list[dict]:
         result = _llm_call(prompt)
         items = _parse_result(result)
         return items
-    except:
+    except Exception:
         return []
 
 
@@ -95,7 +95,7 @@ def _llm_call(prompt):
         ], tools=[])
         if "error" not in result:
             return result.get("choices", [{}])[0].get("message", {}).get("content", "")
-    except:
+    except Exception:
         pass
     return "[]"
 
@@ -108,7 +108,7 @@ def _parse_result(text):
             items = json.loads(m.group())
             if isinstance(items, list):
                 return [i for i in items if isinstance(i, dict) and i.get("content")]
-        except:
+        except Exception:
             pass
     return []
 
@@ -123,7 +123,7 @@ def _load():
     try:
         with open(KNOWLEDGE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 
@@ -254,7 +254,7 @@ def daily_consolidate() -> dict:
         today = datetime.date.today().isoformat()
         sessions = pms.get_sessions_by_date(today, limit=50)
         log["sessions"] = len(sessions)
-    except:
+    except Exception:
         sessions = []
 
     # 2. 提取知识
@@ -285,7 +285,7 @@ def daily_consolidate() -> dict:
         try:
             with open(log_path, "r", encoding="utf-8") as f:
                 logs = json.load(f)
-        except:
+        except Exception:
             pass
     logs.append(log)
     if len(logs) > 90:
@@ -352,7 +352,7 @@ def _write_summary(sessions):
         try:
             with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
                 summaries = json.load(f)
-        except:
+        except Exception:
             pass
     summaries.append(summary)
     if len(summaries) > 90:
@@ -378,7 +378,7 @@ def forget_old() -> int:
     for k in knowledge:
         try:
             last = datetime.datetime.fromisoformat(k.get("last_accessed", ""))
-        except:
+        except Exception:
             last = now
         if last < cutoff and k.get("access_count", 0) <= 2:
             archived.append(k)
@@ -393,7 +393,7 @@ def forget_old() -> int:
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     existing = json.load(f)
-            except:
+            except Exception:
                 pass
         existing.extend(archived)
         with open(path, "w", encoding="utf-8") as f:
@@ -438,7 +438,7 @@ def get_consolidation_log(days=7) -> list:
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)[-days:]
-    except:
+    except Exception:
         return []
 
 

@@ -46,7 +46,7 @@ def _compute_baseline():
                 "size": os.path.getsize(fp),
                 "mtime": os.path.getmtime(fp),
             }
-        except:
+        except Exception:
             pass
     return baseline
 
@@ -61,7 +61,7 @@ def _load_baseline():
     try:
         with open(BASELINE_FILE) as f:
             return json.load(f)
-    except:
+    except Exception:
         return {}
 
 # ── 检查 ────────────────────────────────────────
@@ -88,7 +88,7 @@ def check_integrity():
                 results["modified"].append(rel)
             else:
                 results["ok"].append(rel)
-        except:
+        except Exception:
             results["missing"].append(rel)
     
     for rel in current_files:
@@ -140,7 +140,7 @@ def create_backup():
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         try:
             shutil.copy2(fp, dst)
-        except:
+        except Exception:
             pass
     
     # 更新 latest 软链（Windows 用复制）

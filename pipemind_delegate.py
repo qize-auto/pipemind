@@ -19,7 +19,7 @@ def _load_tasks():
     try:
         with open(TASKS_FILE, encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return {"tasks": [], "next_id": 1}
 
 def _save_tasks(data):
@@ -113,7 +113,7 @@ def _load_api_key():
         with open(cfg_path, encoding="utf-8") as f:
             cfg = json.load(f)
         return cfg.get("model", {}).get("api_key", "")
-    except:
+    except Exception:
         return ""
 
 # ── 任务分解 ──────────────────────────────────

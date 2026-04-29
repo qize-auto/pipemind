@@ -48,7 +48,7 @@ def _load_json(path, default=None):
         try:
             with open(path, encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return default or {}
 
@@ -73,7 +73,7 @@ def search_github(query, limit=10):
         if result.returncode == 0 and result.stdout.strip():
             return json.loads(result.stdout)
         return []
-    except:
+    except Exception:
         return []
 
 def search_openclaw_skills(query, limit=5):
@@ -170,7 +170,7 @@ def explore_source(source, force=False):
                             t = line.split(":", 1)[1].strip()
                             if t.startswith("["):
                                 try: tags = json.loads(t)
-                                except: pass
+                                except Exception: pass
                 
                 # 格式2: 分类列表 .md（awesome-openclaw-skills 格式）
                 if not fm and "categories" in rel:
@@ -196,7 +196,7 @@ def explore_source(source, force=False):
                                 "category": cat_name,
                             }
                     continue  # 已处理，跳到下一个文件
-            except:
+            except Exception:
                 continue
         
         cache[source_name] = skills
@@ -291,7 +291,7 @@ tags: {tags_str}
     try:
         import pipemind_skillforge as forge
         forge.build_registry()
-    except:
+    except Exception:
         pass
     
     _log(f"✅ 已吸收: {external_name} → {safe_name}")
@@ -320,7 +320,7 @@ def search_clawhub(query, limit=5):
                 "score": 0.5,
             })
         return results
-    except:
+    except Exception:
         return []
 
 
@@ -371,7 +371,7 @@ def hunt(query):
         result = forge.create_skill(query)
         if "error" not in result:
             return {"source": "created", "skill": result}
-    except:
+    except Exception:
         pass
     
     return {"source": "none"}

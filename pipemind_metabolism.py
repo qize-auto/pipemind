@@ -16,7 +16,7 @@ def log_perf(action: str, duration: float, tokens: int = 0):
         try:
             with open(PERF_LOG, "r") as f:
                 logs = json.load(f)
-        except: pass
+        except Exception: pass
     
     logs.append({
         "time": datetime.datetime.now().isoformat(),
@@ -40,7 +40,7 @@ def perf_report() -> str:
     try:
         with open(PERF_LOG, "r") as f:
             logs = json.load(f)
-    except:
+    except Exception:
         return "📊 数据损坏"
     
     if not logs:
@@ -82,7 +82,7 @@ def log_tool_usage(tool_name: str, success: bool):
         try:
             with open(USAGE_LOG, "r") as f:
                 usage = json.load(f)
-        except: pass
+        except Exception: pass
     
     if tool_name not in usage:
         usage[tool_name] = {"calls": 0, "success": 0, "fail": 0, "last_used": ""}
@@ -105,7 +105,7 @@ def get_unused_tools(days: int = 14) -> list:
     try:
         with open(USAGE_LOG, "r") as f:
             usage = json.load(f)
-    except:
+    except Exception:
         return []
     
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
@@ -201,7 +201,7 @@ def auto_cleanup(force: bool = False) -> dict:
                 with open(PERF_LOG, "w") as f:
                     json.dump(logs[-100:], f)
                 report["archived"] += 1
-        except: pass
+        except Exception: pass
     
     # 3. 清理 output 目录中过期的结果文件（>30天）
     out_dir = os.path.join(PIPEMIND_DIR, "output")
@@ -266,7 +266,7 @@ def get_system_health() -> str:
             recent = [l for l in logs if l["duration_ms"] > 10000]
             if len(recent) > 5:
                 score -= 10 * min(3, len(recent) // 5)
-        except: pass
+        except Exception: pass
     
     grade = "S" if score >= 90 else ("A" if score >= 80 else ("B" if score >= 60 else "C"))
     return f"⚡ 健康度: {grade} ({score}/100) | 体积: {total_size/1024:.0f}KB"

@@ -40,7 +40,7 @@ class PerformanceTracker:
         try:
             with open(PERF_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
 
     @staticmethod
@@ -122,7 +122,7 @@ class AutoLearner:
         try:
             with open(AUTO_LESSONS_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
 
     @staticmethod
@@ -237,7 +237,7 @@ class SelfTuner:
             with open(TUNING_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
             return {**SelfTuner.DEFAULTS, **data}
-        except:
+        except Exception:
             return dict(SelfTuner.DEFAULTS)
 
     @staticmethod
@@ -357,7 +357,7 @@ def get_recent_reports(days=7) -> list:
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     reports.append(json.load(f))
-            except:
+            except Exception:
                 pass
     return reports
 

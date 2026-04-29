@@ -17,7 +17,7 @@ def _get_machine_key() -> bytes:
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as key:
             machine_guid = winreg.QueryValueEx(key, "MachineGuid")[0]
         return hashlib.sha256(machine_guid.encode()).digest()
-    except:
+    except Exception:
         return hashlib.sha256(b"PIPEMIND_DEFAULT_KEY").digest()
 
 
@@ -44,7 +44,7 @@ def save_secret(name: str, value: str) -> str:
             try:
                 with open(SECRET_FILE, "r") as f:
                     secrets = json.load(f)
-            except: pass
+            except Exception: pass
         secrets[name] = encrypt(value)
         with open(SECRET_FILE, "w") as f:
             json.dump(secrets, f)
@@ -66,7 +66,7 @@ def load_secret(name: str) -> str:
         if name in secrets:
             return decrypt(secrets[name])
         return ""
-    except:
+    except Exception:
         return ""
 
 
@@ -95,7 +95,7 @@ def audit(action: str, detail: str = "", status: str = "ok"):
         try:
             with open(AUDIT_LOG, "r") as f:
                 logs = json.load(f)
-        except: pass
+        except Exception: pass
     
     logs.append({
         "time": datetime.datetime.now().isoformat(),
@@ -118,7 +118,7 @@ def audit_report(hours: int = 24) -> str:
     try:
         with open(AUDIT_LOG, "r") as f:
             logs = json.load(f)
-    except:
+    except Exception:
         return "📋 数据损坏"
     
     cutoff = (datetime.datetime.now() - datetime.timedelta(hours=hours)).isoformat()
@@ -152,7 +152,7 @@ def log_crash(error: str, context: str = ""):
         try:
             with open(CRASH_LOG, "r") as f:
                 crashes = json.load(f)
-        except: pass
+        except Exception: pass
     
     crashes.append({
         "time": datetime.datetime.now().isoformat(),
@@ -181,7 +181,7 @@ def get_last_crash() -> str:
             return "✅ 无崩溃记录"
         last = crashes[-1]
         return f"🩺 最近崩溃: {last['time'][:19]}\n   {last['error'][:100]}"
-    except:
+    except Exception:
         return "📋 数据损坏"
 
 

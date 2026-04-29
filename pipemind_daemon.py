@@ -235,6 +235,7 @@ def _start_consolidation_timer():
         last_consolidate = None
         last_report = None
         last_learn = None
+        last_snapshot = None
         while _running:
             try:
                 now = datetime.datetime.now()
@@ -273,6 +274,16 @@ def _start_consolidation_timer():
                         print(f"  ✅ 学习完成: {result.get('total_learned',0)} 项新知识")
                     except Exception as e:
                         print(f"  ⚠ 每日学习失败: {e}")
+
+                # 凌晨 5:00-5:05 生命快照
+                if now.hour == 5 and 0 <= now.minute < 5 and last_snapshot != today:
+                    last_snapshot = today
+                    try:
+                        import pipemind_chronicle as ch
+                        ch.take_daily_snapshot()
+                        print(f"  📖 生命快照已记录 ({today})")
+                    except Exception as e:
+                        print(f"  ⚠ 生命快照失败: {e}")
             except:
                 pass
             time.sleep(3600)  # 每小时检查一次
